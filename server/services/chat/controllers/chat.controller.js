@@ -27,7 +27,7 @@ export const getConversations = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized" })
         }
 
-        const conversations = await ConversationModel.find({ userId })
+        const conversations = await ConversationModel.find({ userId }).sort({ updatedAt: -1 })
         return res.status(200).json(conversations)
     } catch (error) {
         console.error(error)

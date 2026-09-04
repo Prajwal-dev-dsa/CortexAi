@@ -8,6 +8,7 @@ import { auth, googleProvider } from "../../utils/firebase";
 import { signInWithPopup } from "firebase/auth";
 import { setUserData } from "../redux/slices/userSlice";
 import Sidebar from "../components/Sidebar";
+import ChatArea from "../components/ChatArea";
 
 export default function Home() {
   const dispatch = useDispatch();
@@ -101,19 +102,13 @@ export default function Home() {
               {/* 1. Sidebar Component */}
               <Sidebar />
 
-              {/* 2. Chat Area Placeholder */}
-              <div className="flex-1 flex flex-col items-center justify-center border-r border-purple-500/20 relative z-10">
-                <div className="absolute inset-0 bg-linear-to-br from-[#110624] to-[#070210] -z-10" />
-                <h2 className="text-purple-500/50 text-2xl tracking-widest font-bold">
-                  CHAT AREA
-                </h2>
-                <p className="text-purple-300/30 text-sm mt-2">
-                  Ready to implement
-                </p>
+              {/* 2. REAL CHAT AREA Component (Replaces Placeholder) */}
+              <div className="flex-1 flex flex-col border-r border-purple-500/20 relative z-10 overflow-hidden">
+                <ChatArea />
               </div>
 
-              {/* 3. Artifact Placeholder */}
-              <div className="w-[30%] flex flex-col items-center justify-center relative z-10">
+              {/* 3. Artifact Placeholder (Leave unchanged for now) */}
+              <div className="w-[20%] flex flex-col items-center justify-center relative z-10">
                 <div className="absolute inset-0 bg-linear-to-bl from-[#1A0B2E] to-[#070210] -z-10 opacity-50" />
                 <h2 className="text-purple-500/50 text-2xl tracking-widest font-bold">
                   ARTIFACT
