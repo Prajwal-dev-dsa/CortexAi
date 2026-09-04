@@ -7,7 +7,7 @@ const router = express.Router()
 router.get("/create-conversation", createConversation)
 router.get("/get-conversations", getConversations)
 router.post("/update-conversation", updateConversation)
-router.delete("/delete-conversation/:id", deleteConversation)
+router.delete("/delete-conversation/:conversationId", deleteConversation)
 router.post("/save-message", saveMessage)
 router.get("/get-all-messages/:conversationId", getAllMessages)
 

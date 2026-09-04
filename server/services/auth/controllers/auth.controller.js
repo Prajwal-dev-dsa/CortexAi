@@ -41,9 +41,9 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        const { sessionId } = req.cookies;
+        const sessionId = req.cookies.session;
         if (!sessionId) {
-            return res.status(400).json({ message: "Session ID is required" });
+            return res.status(400).json({ message: "Session is required" });
         }
         await redis.del(`session:${sessionId}`);
         res.clearCookie("session");
