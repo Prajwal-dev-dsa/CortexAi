@@ -1,6 +1,7 @@
 import axios from "axios";
 import { graph } from "../graph/graph.js";
 import dotenv from "dotenv";
+import { addNewMessage } from "../config/memory.js";
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ export const agentController = async (req, res) => {
             conversationId,
             role: "assistant"
         });
+        await addNewMessage(conversationId, "user", prompt);
+        await addNewMessage(conversationId, "assistant", response);
         return res.status(200).json(response);
     } catch (error) {
         console.error(error);

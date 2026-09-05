@@ -1,4 +1,6 @@
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages"
 import { getDesiredModel } from "../config/llm.models.js"
+import { getMemory } from "../config/memory.js"
 
 
 export const chatAgent = async (state) => {
@@ -54,12 +56,23 @@ You MUST format your responses using clean, structured Markdown.
 - Use triple backticks (\`\`\`) with the language name for multi-line code blocks.
 - Never output raw HTML or unformatted dense blocks of text.
 `
-    const user_prompt = state.userPrompt
+    const historyMessages = await getMemory(state.conversationId)
+    const messages = [
+        new SystemMessage(system_prompt)
+    ]
 
-    const response = await llm.invoke([
-        { role: "system", content: system_prompt },
-        { role: "human", content: user_prompt }
-    ]);
+    historyMessages.forEach((message) => {
+        if (message.role === "user") {
+            messages.push(new HumanMessage(message.content))
+        } else if (message.role === "assistant") {
+            messages.push(new AIMessage(message.content))
+        }
+    })
+
+    const user_prompt = state.userPrompt
+    messages.push(new HumanMessage(user_prompt))
+
+    const response = await llm.invoke(messages)
 
     return {
         ...state,

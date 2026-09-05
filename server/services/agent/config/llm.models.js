@@ -14,6 +14,6 @@ const googleLLM = new ChatGoogle({
 
 export const getDesiredModel = (agent) => {
   if (agent === "chat" || agent === "search" || agent === "router") return groqLLM;
-  if (agent === "coding") return googleLLM;
+  if (agent === "coding" || agent === "title") return googleLLM;
   return groqLLM;
 }

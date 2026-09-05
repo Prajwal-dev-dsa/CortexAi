@@ -7,6 +7,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Trash2,
+  Edit2,
   User,
   Coins,
   LogOut,
@@ -17,13 +18,18 @@ import {
   setConversations,
   addConversation,
   removeConversation,
+  updateConversationTitle,
   setSelectedConversation,
 } from "../redux/slices/conversationSlice";
 import { setUserData, clearUserData } from "../redux/slices/userSlice";
+
 import DeleteModal from "./DeleteModal";
+import EditModal from "./EditModal"; // IMPORT NEW MODAL
+
 import { createConversation } from "../features/createConversation";
 import { getConversations } from "../features/getConversations";
 import { deleteConversation } from "../features/deleteConversation";
+import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle"; // YOUR API
 import { getCurrentUser } from "../features/getCurrentUser";
 import { logOut } from "../features/logout";
 
@@ -33,12 +39,17 @@ export default function Sidebar({ onLogoutSuccess }) {
     (state) => state.conversation,
   );
   const { userData } = useSelector((state) => state.user);
-  console.log(userData);
+
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // Delete Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
 
-  // Initial Data Fetch
+  // Edit Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [chatToEdit, setChatToEdit] = useState(null);
+
   useEffect(() => {
     const fetchInitialData = async () => {
       const [userRes, convRes] = await Promise.all([
@@ -69,6 +80,18 @@ export default function Sidebar({ onLogoutSuccess }) {
     setChatToDelete(null);
   };
 
+  const confirmEdit = async (newTitle) => {
+    if (!chatToEdit) return;
+    // Optimistic UI Update locally
+    dispatch(updateConversationTitle({ id: chatToEdit._id, title: newTitle }));
+
+    // Call backend API
+    await updateConversationTitleApi(chatToEdit._id, newTitle);
+
+    setEditModalOpen(false);
+    setChatToEdit(null);
+  };
+
   const handleLogout = async () => {
     await logOut();
     dispatch(clearUserData());
@@ -80,7 +103,7 @@ export default function Sidebar({ onLogoutSuccess }) {
       <motion.div
         initial={false}
         animate={{ width: isExpanded ? 280 : 72 }}
-        className="h-screen bg-linear-to-b from-[#1A0B2E] to-[#070210] border-r border-purple-500/20 flex flex-col font-['Orbitron',sans-serif] relative overflow-hidden"
+        className="h-screen bg-linear-to-b from-[#1A0B2E] to-[#070210] border-r border-purple-500/20 flex flex-col font-['Orbitron',sans-serif] relative overflow-hidden z-20"
       >
         {/* Header & Toggle */}
         <div className="flex items-center p-4 h-16">
@@ -99,8 +122,6 @@ export default function Sidebar({ onLogoutSuccess }) {
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Notice `ml-auto` pushes the button to the absolute right side */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="ml-auto p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
@@ -128,13 +149,13 @@ export default function Sidebar({ onLogoutSuccess }) {
           </button>
         </div>
 
-        {/* Recents List */}
         {isExpanded && (
           <div className="px-4 py-2 text-xs font-semibold text-purple-400/60 uppercase tracking-widest">
             Recents
           </div>
         )}
 
+        {/* Conversation List */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 space-y-1 custom-scrollbar">
           <AnimatePresence>
             {conversations.map((chat) => (
@@ -153,16 +174,30 @@ export default function Sidebar({ onLogoutSuccess }) {
                     <span className="truncate flex-1 text-sm">
                       {chat.title || "New Chat"}
                     </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setChatToDelete(chat._id);
-                        setDeleteModalOpen(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-all"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+                      {/* EDIT BUTTON */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setChatToEdit(chat);
+                          setEditModalOpen(true);
+                        }}
+                        className="p-1.5 text-purple-300 hover:text-white hover:bg-purple-500/40 rounded-md transition-all"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      {/* DELETE BUTTON */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setChatToDelete(chat._id);
+                          setDeleteModalOpen(true);
+                        }}
+                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </>
                 )}
               </motion.div>
@@ -170,7 +205,7 @@ export default function Sidebar({ onLogoutSuccess }) {
           </AnimatePresence>
         </div>
 
-        {/* Footer / Profile Section */}
+        {/* Footer */}
         <div className="p-3 border-t border-purple-500/20 bg-[#0F0524]">
           <div
             className={`flex items-center p-2 rounded-xl bg-purple-900/20 border border-purple-500/20 ${!isExpanded && "justify-center"}`}
@@ -186,7 +221,6 @@ export default function Sidebar({ onLogoutSuccess }) {
                 <User size={20} className="text-purple-200" />
               </div>
             )}
-
             {isExpanded && (
               <div className="ml-3 flex-1 overflow-hidden">
                 <div className="text-sm font-semibold text-white truncate">
@@ -200,7 +234,6 @@ export default function Sidebar({ onLogoutSuccess }) {
                 </div>
               </div>
             )}
-
             {isExpanded && (
               <button
                 onClick={handleLogout}
@@ -217,6 +250,14 @@ export default function Sidebar({ onLogoutSuccess }) {
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={confirmDelete}
+      />
+
+      {/* RENDER EDIT MODAL */}
+      <EditModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onConfirm={confirmEdit}
+        currentTitle={chatToEdit?.title}
       />
     </>
   );

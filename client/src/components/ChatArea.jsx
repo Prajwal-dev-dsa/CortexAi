@@ -7,11 +7,14 @@ import { setMessages, addMessage } from "../redux/slices/messageSlice";
 import {
   addConversation,
   setSelectedConversation,
+  updateConversationTitle,
 } from "../redux/slices/conversationSlice";
 import ChatInput from "./chatInput";
 import { getAllMessages } from "../features/getAllMessages";
 import { createConversation } from "../features/createConversation";
 import { sendMessage } from "../features/sendMessage";
+import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle";
+import { generateTitleApi } from "../features/generateTitle";
 
 export default function ChatArea() {
   const dispatch = useDispatch();
@@ -21,7 +24,7 @@ export default function ChatArea() {
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 1. Add a useRef to track when we are creating a new chat from the default screen
+  // Track when we are creating a new chat from the default screen
   const isAutoCreatingRef = useRef(false);
 
   // Calculate Greeting based on time
@@ -38,8 +41,6 @@ export default function ChatArea() {
         return;
       }
 
-      // 2. Prevent the fetch if we just auto-created a chat,
-      // so we don't accidentally overwrite our optimistic user message with an empty database array!
       if (isAutoCreatingRef.current) return;
 
       const data = await getAllMessages(selectedConversation._id);
@@ -54,15 +55,13 @@ export default function ChatArea() {
     setIsProcessing(true);
     let activeConvoId = selectedConversation?._id;
 
-    // Auto-create conversation if none is selected (Empty State behavior)
     if (!activeConvoId) {
-      isAutoCreatingRef.current = true; // Turn the flag ON
+      isAutoCreatingRef.current = true;
 
       const newChat = await createConversation();
       if (newChat) {
         activeConvoId = newChat._id;
 
-        // Optimistically create the user message
         const tempUserMsg = {
           _id: Date.now().toString(),
           content: payload.text,
@@ -70,17 +69,15 @@ export default function ChatArea() {
           createdAt: new Date().toISOString(),
         };
 
-        // Set this as the ONLY message in the UI to start, preventing flashing
         dispatch(setMessages([tempUserMsg]));
         dispatch(addConversation(newChat));
         dispatch(setSelectedConversation(newChat));
       } else {
         isAutoCreatingRef.current = false;
         setIsProcessing(false);
-        return; // Failed to create
+        return;
       }
     } else {
-      // If the chat already existed, just add the user message normally
       const tempUserMsg = {
         _id: Date.now().toString(),
         content: payload.text,
@@ -91,13 +88,11 @@ export default function ChatArea() {
     }
 
     try {
-      // Call Agent API
       const responseText = await sendMessage({
         prompt: payload.text,
         conversationId: activeConvoId,
       });
 
-      // Add Assistant response to UI
       dispatch(
         addMessage({
           _id: (Date.now() + 1).toString(),
@@ -106,17 +101,37 @@ export default function ChatArea() {
           createdAt: new Date().toISOString(),
         }),
       );
+
+      // ==========================================
+      // AUTO-RENAME LOGIC: Trigger as a background task
+      // ==========================================
+      if (messages.length === 0) {
+        // We removed the 'await' here. This runs silently in the background.
+        generateTitleApi(payload.text, responseText)
+          .then((generatedTitle) => {
+            if (generatedTitle) {
+              updateConversationTitleApi(activeConvoId, generatedTitle);
+              dispatch(
+                updateConversationTitle({
+                  id: activeConvoId,
+                  title: generatedTitle,
+                }),
+              );
+            }
+          })
+          .catch((err) => console.error("Auto-rename failed:", err));
+      }
     } catch (error) {
       console.error("Failed to send message", error);
     } finally {
+      // This will now execute immediately after the AI response is added!
       setIsProcessing(false);
-      isAutoCreatingRef.current = false; // Turn the flag OFF when completely done
+      isAutoCreatingRef.current = false;
     }
   };
 
   return (
     <div className="flex flex-col h-full w-full relative z-10 bg-linear-to-br from-[#110624] to-[#070210] font-['Orbitron',sans-serif]">
-      {/* Background Ambient Glows */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 right-0 w-125 h-125 bg-purple-600/5 blur-[150px] rounded-full" />
         <div className="absolute bottom-0 left-0 w-125 h-125 bg-fuchsia-600/5 blur-[150px] rounded-full" />
@@ -124,9 +139,6 @@ export default function ChatArea() {
 
       <AnimatePresence mode="wait">
         {selectedConversation ? (
-          /* =========================================
-                       ACTIVE CHAT VIEW
-                       ========================================= */
           <motion.div
             key="active-chat"
             initial={{ opacity: 0 }}
@@ -134,7 +146,6 @@ export default function ChatArea() {
             exit={{ opacity: 0 }}
             className="flex flex-col h-full relative z-10"
           >
-            {/* Navbar */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-purple-500/20 bg-[#070210]/50 backdrop-blur-md">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/20">
@@ -156,9 +167,12 @@ export default function ChatArea() {
               messages={messages}
               isProcessing={isProcessing}
               userData={userData}
+              // NEW: Instantly trigger a message send when a card is clicked
+              onSuggestionClick={(promptText) =>
+                handleSendMessage({ text: promptText, attachment: null })
+              }
             />
 
-            {/* Input Area */}
             <div className="p-4 bg-linear-to-t from-[#070210] to-transparent">
               <ChatInput
                 onSendMessage={handleSendMessage}
@@ -167,9 +181,6 @@ export default function ChatArea() {
             </div>
           </motion.div>
         ) : (
-          /* =========================================
-                       DEFAULT / EMPTY STATE (Welcome Screen)
-                       ========================================= */
           <motion.div
             key="empty-state"
             initial={{ opacity: 0, y: 20 }}
@@ -199,7 +210,6 @@ export default function ChatArea() {
               </p>
             </div>
 
-            {/* Centered Input Box for Empty State */}
             <div className="w-full max-w-3xl transform -translate-y-4">
               <ChatInput
                 onSendMessage={handleSendMessage}
