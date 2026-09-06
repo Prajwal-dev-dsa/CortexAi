@@ -9,12 +9,12 @@ import {
   setSelectedConversation,
   updateConversationTitle,
 } from "../redux/slices/conversationSlice";
-import ChatInput from "./chatInput";
 import { getAllMessages } from "../features/getAllMessages";
 import { createConversation } from "../features/createConversation";
 import { sendMessage } from "../features/sendMessage";
 import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle";
 import { generateTitleApi } from "../features/generateTitle";
+import ChatInput from "./ChatInput";
 
 export default function ChatArea() {
   const dispatch = useDispatch();
@@ -88,15 +88,19 @@ export default function ChatArea() {
     }
 
     try {
-      const responseText = await sendMessage({
+      // Pass the explicitly chosen agent to the backend
+      const response = await sendMessage({
         prompt: payload.text,
         conversationId: activeConvoId,
+        agent: payload.agent,
       });
 
+      // Dispatch the new object structure (response text + images)
       dispatch(
         addMessage({
           _id: (Date.now() + 1).toString(),
-          content: responseText,
+          content: response.response,
+          images: response.searchImages || [],
           role: "assistant",
           createdAt: new Date().toISOString(),
         }),
@@ -106,8 +110,8 @@ export default function ChatArea() {
       // AUTO-RENAME LOGIC: Trigger as a background task
       // ==========================================
       if (messages.length === 0) {
-        // We removed the 'await' here. This runs silently in the background.
-        generateTitleApi(payload.text, responseText)
+        // Pass response.response so it extracts the actual string, not an object
+        generateTitleApi(payload.text, response.response)
           .then((generatedTitle) => {
             if (generatedTitle) {
               updateConversationTitleApi(activeConvoId, generatedTitle);
@@ -124,7 +128,6 @@ export default function ChatArea() {
     } catch (error) {
       console.error("Failed to send message", error);
     } finally {
-      // This will now execute immediately after the AI response is added!
       setIsProcessing(false);
       isAutoCreatingRef.current = false;
     }
@@ -167,9 +170,12 @@ export default function ChatArea() {
               messages={messages}
               isProcessing={isProcessing}
               userData={userData}
-              // NEW: Instantly trigger a message send when a card is clicked
               onSuggestionClick={(promptText) =>
-                handleSendMessage({ text: promptText, attachment: null })
+                handleSendMessage({
+                  text: promptText,
+                  attachment: null,
+                  agent: "auto",
+                })
               }
             />
 

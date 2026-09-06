@@ -2,6 +2,12 @@ import { getDesiredModel } from "../config/llm.models.js"
 
 
 export const routerAgent = async (state) => {
+    if (state.agentUsed && state.agentUsed !== "auto") {
+        return {
+            ...state,
+            agentUsed: state.agentUsed
+        };
+    }
     const llm = getDesiredModel("router")
     const prompt = `You are an AI Agent Router.
 

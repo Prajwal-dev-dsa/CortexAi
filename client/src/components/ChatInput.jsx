@@ -1,17 +1,39 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Paperclip, Mic, X, Image as ImageIcon } from "lucide-react";
+import {
+  Send,
+  Paperclip,
+  Mic,
+  X,
+  Image as ImageIcon,
+  Zap,
+  MessageSquare,
+  Code,
+  FileText,
+  Presentation,
+  Globe,
+} from "lucide-react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 
+const AGENTS = [
+  { id: "auto", label: "Auto", icon: Zap },
+  { id: "chat", label: "Chat", icon: MessageSquare },
+  { id: "coding", label: "Coding", icon: Code },
+  { id: "pdf", label: "PDF", icon: FileText },
+  { id: "ppt", label: "PPT", icon: Presentation },
+  { id: "image", label: "Image", icon: ImageIcon },
+  { id: "search", label: "Search", icon: Globe },
+];
+
 export default function ChatInput({ onSendMessage, isProcessing }) {
-  // Tracks finalized text (typed manually or committed from the mic)
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState(null);
+  const [selectedAgent, setSelectedAgent] = useState("auto"); // Default to Auto
 
   const fileInputRef = useRef(null);
-  const textareaRef = useRef(null); // Reference to forcefully focus the input
+  const textareaRef = useRef(null);
 
   const {
     transcript,
@@ -20,33 +42,23 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
 
-  // The visual preview combines finalized text with the live spoken transcript
   const displayValue =
     listening && transcript ? `${text} ${transcript}`.trim() : text;
 
-  // 1. The Kill-Switch: Clicking the text area instantly stops the mic and locks in the text
   const handleInputClick = () => {
     if (listening) {
       SpeechRecognition.stopListening();
-
-      // Safely commit the text if anything was spoken
       if (transcript) {
         setText(displayValue);
         resetTranscript();
       }
-
-      // Force the cursor to appear after React updates the readOnly state
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 100);
+      setTimeout(() => textareaRef.current?.focus(), 100);
     }
   };
 
-  // 2. Safely toggle the microphone button
   const toggleListening = () => {
     if (listening) {
       SpeechRecognition.stopListening();
-      // Commit the text manually when the button is clicked to stop
       if (transcript) {
         setText(displayValue);
         resetTranscript();
@@ -56,7 +68,6 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
     }
   };
 
-  // 3. Fallback: If the browser naturally times out the mic, commit the text
   useEffect(() => {
     if (!listening && transcript) {
       setText((prev) => `${prev} ${transcript}`.trim());
@@ -84,7 +95,6 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
     const finalMessage = displayValue;
     if (!finalMessage.trim() && !attachment) return;
 
-    // Shut down the mic completely during sending
     if (listening) {
       SpeechRecognition.stopListening();
       resetTranscript();
@@ -93,9 +103,9 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
     onSendMessage({
       text: finalMessage,
       attachment: attachment?.file || null,
+      agent: selectedAgent, // Send the explicitly selected agent to the backend
     });
 
-    // Reset everything for a fresh start
     setText("");
     removeAttachment();
   };
@@ -109,7 +119,6 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
 
   return (
     <div className="relative w-full max-w-4xl mx-auto p-4 font-['Orbitron',sans-serif]">
-      {/* Attachment Preview Pop-up */}
       <AnimatePresence>
         {attachment && (
           <motion.div
@@ -145,59 +154,83 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
         )}
       </AnimatePresence>
 
-      {/* Main Input Box */}
-      <div className="relative flex items-end gap-2 bg-[#110624]/80 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-2 shadow-[0_0_30px_-10px_rgba(147,51,234,0.3)] transition-all focus-within:border-purple-400/60 focus-within:shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)]">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-        />
+      <div className="relative flex flex-col gap-2 bg-[#110624]/90 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-3 shadow-[0_0_30px_-10px_rgba(147,51,234,0.3)] transition-all focus-within:border-purple-400/60 focus-within:shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)]">
+        {/* Agent Selector Bar */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-purple-500/20 pb-2 mb-1">
+          {AGENTS.map((agent) => {
+            const Icon = agent.icon;
+            const isSelected = selectedAgent === agent.id;
+            return (
+              <button
+                key={agent.id}
+                onClick={() => setSelectedAgent(agent.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  isSelected
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_-2px_rgba(147,51,234,0.6)]"
+                    : "bg-transparent text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-200 border border-transparent hover:border-purple-500/30"
+                }`}
+              >
+                <Icon size={14} />
+                <span className="font-['Orbitron',sans-serif] tracking-wider">
+                  {agent.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="p-3 text-purple-400 hover:text-purple-200 hover:bg-purple-500/20 rounded-xl transition-colors shrink-0"
-          title="Attach file"
-        >
-          <Paperclip size={20} />
-        </button>
-
-        <textarea
-          ref={textareaRef}
-          value={displayValue}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onClick={handleInputClick}
-          readOnly={listening}
-          placeholder={
-            listening ? "Listening... (Click to type)" : "Message CortexAI..."
-          }
-          className={`flex-1 bg-transparent text-white placeholder-purple-300/40 resize-none outline-none py-3 px-2 max-h-32 custom-scrollbar text-sm font-sans tracking-wide ${listening ? "cursor-default opacity-80" : "cursor-text opacity-100"}`}
-          rows={1}
-          style={{ minHeight: "44px" }}
-        />
-
-        <div className="flex items-center gap-1 shrink-0 pb-1 pr-1">
-          {browserSupportsSpeechRecognition && (
-            <button
-              onClick={toggleListening}
-              className={`p-2.5 rounded-xl transition-all ${listening ? "bg-red-500/20 text-red-400 animate-pulse border border-red-500/50" : "text-purple-400 hover:text-purple-200 hover:bg-purple-500/20"}`}
-              title="Voice typing"
-            >
-              <Mic size={20} />
-            </button>
-          )}
-
+        <div className="flex items-end gap-2 w-full">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
           <button
-            onClick={handleSend}
-            disabled={isProcessing || (!displayValue.trim() && !attachment)}
-            className="p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_-3px_rgba(147,51,234,0.5)]"
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2.5 text-purple-400 hover:text-purple-200 hover:bg-purple-500/20 rounded-xl transition-colors shrink-0 mb-0.5"
+            title="Attach file"
           >
-            <Send
-              size={18}
-              className={isProcessing ? "opacity-50" : "opacity-100 ml-0.5"}
-            />
+            <Paperclip size={20} />
           </button>
+
+          <textarea
+            ref={textareaRef}
+            value={displayValue}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onClick={handleInputClick}
+            readOnly={listening}
+            placeholder={
+              listening ? "Listening... (Click to type)" : "Ask Anything..."
+            }
+            className={`flex-1 bg-transparent text-white placeholder-purple-300/40 resize-none outline-none py-2.5 px-2 max-h-32 custom-scrollbar text-sm font-sans tracking-wide ${listening ? "cursor-default opacity-80" : "cursor-text opacity-100"}`}
+            rows={1}
+            style={{ minHeight: "44px" }}
+          />
+
+          <div className="flex items-center gap-1 shrink-0 mb-0.5">
+            {browserSupportsSpeechRecognition && (
+              <button
+                onClick={toggleListening}
+                className={`p-2.5 rounded-xl transition-all ${listening ? "bg-red-500/20 text-red-400 animate-pulse border border-red-500/50" : "text-purple-400 hover:text-purple-200 hover:bg-purple-500/20"}`}
+                title="Voice typing"
+              >
+                <Mic size={20} />
+              </button>
+            )}
+
+            <button
+              onClick={handleSend}
+              disabled={isProcessing || (!displayValue.trim() && !attachment)}
+              className="p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_-3px_rgba(147,51,234,0.5)]"
+            >
+              <Send
+                size={18}
+                className={isProcessing ? "opacity-50" : "opacity-100 ml-0.5"}
+              />
+            </button>
+          </div>
         </div>
       </div>
     </div>
