@@ -18,17 +18,20 @@ export const agentController = async (req, res) => {
         });
         const result = await graph.invoke({ userPrompt: prompt, conversationId, agentUsed: agent });
         const response = result.aiResponse;
+        console.log(result)
         await axios.post(`${process.env.CHAT_SERVICE_URL}/save-message`, {
             content: response,
             conversationId,
             role: "assistant",
-            images: result.searchImages || []
+            images: result?.searchImages || [],
+            artifacts: result?.artifacts || []
         });
         await addNewMessage(conversationId, "user", prompt);
         await addNewMessage(conversationId, "assistant", response);
         return res.status(200).json({
             response,
-            searchImages: result.searchImages || []
+            searchImages: result?.searchImages || [],
+            artifacts: result?.artifacts || []
         });
     } catch (error) {
         console.error(error);

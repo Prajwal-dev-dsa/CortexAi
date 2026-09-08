@@ -77,11 +77,11 @@ export const deleteConversation = async (req, res) => {
 
 export const saveMessage = async (req, res) => {
     try {
-        const { conversationId, content, role, images } = req.body
+        const { conversationId, content, role, images, artifacts } = req.body
         if (!conversationId || !content || !role) {
             return res.status(400).json({ message: "Conversation ID, content and role are required" })
         }
-        const message = await MessageModel.create({ conversationId, content, role, images })
+        const message = await MessageModel.create({ conversationId, content, role, images, artifacts })
         return res.status(200).json(message)
     } catch (error) {
         console.error(error)

@@ -101,6 +101,7 @@ export default function ChatArea() {
           _id: (Date.now() + 1).toString(),
           content: response.response,
           images: response.searchImages || [],
+          artifacts: response.artifacts || [],
           role: "assistant",
           createdAt: new Date().toISOString(),
         }),
