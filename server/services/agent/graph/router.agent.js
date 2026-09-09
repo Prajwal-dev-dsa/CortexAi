@@ -5,7 +5,7 @@ export const routerAgent = async (state) => {
     if (state.agentUsed && state.agentUsed !== "auto") {
         return {
             ...state,
-            agentUsed: state.agentUsed
+            agentUsed: state.agentUsed.toLowerCase()
         };
     }
     const llm = getDesiredModel("router")

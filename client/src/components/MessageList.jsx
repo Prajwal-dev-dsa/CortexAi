@@ -13,6 +13,7 @@ import {
   Lightbulb,
   GraduationCap,
   X,
+  ImageOff,
 } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -41,12 +42,10 @@ const SUGGESTIONS = [
   },
 ];
 
-// Handles broken image links gracefully
+// Fallback for Grid Images (Search)
 const ImageWithFallback = ({ src, onClick }) => {
   const [hasError, setHasError] = useState(false);
-
   if (hasError) return null;
-
   return (
     <div
       onClick={() => onClick(src)}
@@ -59,6 +58,32 @@ const ImageWithFallback = ({ src, onClick }) => {
         className="w-full h-full object-cover group-hover:scale-105 group-hover:opacity-80 transition-all duration-300"
       />
     </div>
+  );
+};
+
+// Premium Markdown Image Component (Handles Expired S3 Links & Resizing)
+const MarkdownImage = ({ src, alt, onClick }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full max-w-75 h-48 rounded-2xl shadow-lg border border-purple-500/20 bg-[#0F0524] my-4 text-purple-400/50">
+        <ImageOff size={24} className="mb-2 opacity-50" />
+        <span className="text-xs font-['Orbitron',sans-serif] tracking-widest uppercase">
+          Link Expired
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      onClick={() => onClick(src)}
+      className="w-full max-w-75 rounded-2xl shadow-[0_0_30px_-10px_rgba(147,51,234,0.3)] border border-purple-500/30 object-cover my-4 cursor-zoom-in hover:opacity-90 transition-opacity"
+    />
   );
 };
 
@@ -250,14 +275,19 @@ export default function MessageList({
                                   ),
                                   a: ({ node, ...props }) => (
                                     <a
-                                      className="text-purple-400 hover:text-purple-300 underline underline-offset-4 transition-colors font-medium"
+                                      className="text-purple-400 hover:text-purple-300 underline underline-offset-4 transition-colors font-medium break-all"
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       {...props}
                                     />
                                   ),
-
-                                  /* MASSIVELY SCALED HEADING STYLES */
+                                  // Use our new robust MarkdownImage component
+                                  img: ({ node, ...props }) => (
+                                    <MarkdownImage
+                                      {...props}
+                                      onClick={setSelectedImage}
+                                    />
+                                  ),
                                   h1: ({ node, ...props }) => (
                                     <h1
                                       className="text-4xl md:text-5xl font-extrabold text-white mt-10 mb-6 tracking-tight border-b border-purple-500/30 pb-4"
