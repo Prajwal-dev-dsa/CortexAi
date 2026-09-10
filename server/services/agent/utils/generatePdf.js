@@ -1,7 +1,7 @@
 import PDFDocument from "pdfkit";
 
 /**
- * Builds a formatted PDF document in memory and returns it as a Buffer.
+ * Builds a beautifully formatted PDF document in memory and returns it as a Buffer.
  * @param {Object} data - Structured document data containing title, subtitle, and sections.
  * @returns {Promise<Buffer>}
  */
@@ -10,7 +10,7 @@ export const generatePdfBuffer = (data) => {
         try {
             const doc = new PDFDocument({
                 size: "A4",
-                margins: { top: 70, bottom: 70, left: 70, right: 70 },
+                margins: { top: 60, bottom: 70, left: 60, right: 60 },
                 bufferPages: true,
             });
 
@@ -19,85 +19,101 @@ export const generatePdfBuffer = (data) => {
             doc.on("end", () => resolve(Buffer.concat(buffers)));
             doc.on("error", (err) => reject(err));
 
-            const titleColor = "#000000";
-            const subtitleColor = "#333333";
-            const headingColor = "#444444";
-            const textColor = "#222222";
-            const footerColor = "#666666";
+            const colors = {
+                primary: "#1D0B3B",
+                accent: "#9333EA",
+                textMain: "#334155",
+                textMuted: "#94A3B8",
+                white: "#FFFFFF",
+                lilac: "#D8B4FE"
+            };
 
-            // Title (Centered, Large)
+            doc.rect(0, 0, doc.page.width, 160).fill(colors.primary);
+            doc.rect(0, 160, doc.page.width, 4).fill(colors.accent);
+
+            doc.y = 55;
+            doc.x = 60;
             if (data.title) {
-                doc.fillColor(titleColor)
-                    .fontSize(28)
-                    .font("Helvetica")
-                    .text(data.title, { align: "center" });
-                doc.moveDown(0.5);
+                doc.fillColor(colors.white)
+                    .fontSize(32)
+                    .font("Helvetica-Bold")
+                    .text(data.title, { width: doc.page.width - 120, align: "left" });
             }
 
-            // Subtitle (Centered, Medium)
             if (data.subtitle) {
-                doc.fillColor(subtitleColor)
-                    .fontSize(12)
+                doc.moveDown(0.2);
+                doc.fillColor(colors.lilac)
+                    .fontSize(14)
                     .font("Helvetica")
-                    .text(data.subtitle, { align: "center" });
-                doc.moveDown(3);
+                    .text(data.subtitle, { width: doc.page.width - 120, align: "left" });
             }
 
-            // Document Sections
+            doc.y = 210;
             if (Array.isArray(data.sections)) {
                 data.sections.forEach((section) => {
-                    if (doc.y > 650) {
-                        doc.addPage();
-                    }
+                    if (doc.y > 680) doc.addPage();
 
-                    // Section Heading (Left-aligned, Clean, No automatic numbering)
                     if (section.heading) {
                         const cleanHeading = section.heading.replace(/^\d+\.\s*/, '');
 
-                        doc.fillColor(headingColor)
+                        doc.moveDown(1.5);
+                        doc.fillColor(colors.primary)
                             .fontSize(18)
-                            .font("Helvetica")
-                            .text(cleanHeading, { align: "left" });
+                            .font("Helvetica-Bold")
+                            .text(cleanHeading);
+
+                        doc.rect(60, doc.y - 2, 40, 2).fill(colors.accent);
                         doc.moveDown(0.8);
                     }
 
-                    // Section Bullet Points
                     if (Array.isArray(section.points)) {
                         section.points.forEach((point) => {
-                            if (doc.y > 720) {
-                                doc.addPage();
-                            }
+                            if (doc.y > 720) doc.addPage();
 
                             const cleanPoint = point.replace(/^[-•*]\s*/, '');
+                            const currentY = doc.y;
 
-                            doc.fillColor(textColor)
-                                .fontSize(11)
+                            doc.circle(68, currentY + 6, 3).fill(colors.accent);
+
+                            doc.fillColor(colors.textMain)
+                                .fontSize(11.5)
                                 .font("Helvetica")
-                                .text(`•  ${cleanPoint}`, {
-                                    indent: 0,
-                                    lineGap: 4,
-                                    paragraphGap: 6,
+                                .text(cleanPoint, 85, currentY, {
+                                    lineGap: 5,
+                                    paragraphGap: 10,
+                                    width: doc.page.width - 145
                                 });
+
+                            doc.x = 60;
                         });
                     }
-
-                    doc.moveDown(1.5);
                 });
             }
 
-            // Footer
             const range = doc.bufferedPageRange();
             for (let i = range.start; i < range.start + range.count; i++) {
                 doc.switchToPage(i);
-                doc.fillColor(footerColor)
+
+                const oldBottomMargin = doc.page.margins.bottom;
+                doc.page.margins.bottom = 0;
+
+                doc.rect(60, doc.page.height - 65, doc.page.width - 120, 1).fill("#E2E8F0");
+
+                doc.fillColor(colors.accent)
                     .fontSize(10)
+                    .font("Helvetica-Bold")
+                    .text("CortexAI", 60, doc.page.height - 50, { lineBreak: false });
+
+                doc.fillColor(colors.textMuted)
+                    .fontSize(9)
                     .font("Helvetica")
-                    .text(
-                        "Generated By CortexAI",
-                        0,
-                        doc.page.height - 50,
-                        { align: "center", width: doc.page.width }
-                    );
+                    .text(`Page ${i + 1} of ${range.count}`, 0, doc.page.height - 50, {
+                        align: "right",
+                        width: doc.page.width - 60,
+                        lineBreak: false
+                    });
+
+                doc.page.margins.bottom = oldBottomMargin;
             }
 
             doc.end();

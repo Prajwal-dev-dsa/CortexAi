@@ -55,11 +55,9 @@ export const imageAgent = async (state) => {
         await uploadToS3(fileName, imageBuffer, 'image/png');
         const downloadUrl = await fetchFromS3(fileName);
 
-        const safeUrl = encodeURI(downloadUrl);
-
         return {
             ...state,
-            aiResponse: `**Image Generated Successfully!**\n\n![Generated AI Image](${safeUrl})\n\n[Download Original Image](${safeUrl})\n\n*Note: Link expires in 60 minutes.*`
+            aiResponse: `**Image Generated Successfully!**\n\n![Generated AI Image](${downloadUrl})\n\n[Download Original Image](${downloadUrl})\n\n*Note: Link expires in 60 minutes.*`
         };
     } catch (error) {
         console.error("Image agent error:", error);
