@@ -12,25 +12,30 @@ import {
   FileText,
   Presentation,
   Globe,
+  FileSearch,
+  ScanEye,
 } from "lucide-react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 
+// Expanded to include the new RAG and Analyzer agents
 const AGENTS = [
   { id: "auto", label: "Auto", icon: Zap },
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "coding", label: "Coding", icon: Code },
-  { id: "pdf", label: "PDF", icon: FileText },
-  { id: "ppt", label: "PPT", icon: Presentation },
-  { id: "image", label: "Image", icon: ImageIcon },
+  { id: "pdf", label: "PDF Gen", icon: FileText },
+  { id: "pdfRag", label: "Ask PDF", icon: FileSearch },
+  { id: "ppt", label: "PPT Gen", icon: Presentation },
+  { id: "image", label: "Image Gen", icon: ImageIcon },
+  { id: "imageAnalyzer", label: "Vision", icon: ScanEye },
   { id: "search", label: "Search", icon: Globe },
 ];
 
 export default function ChatInput({ onSendMessage, isProcessing }) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState(null);
-  const [selectedAgent, setSelectedAgent] = useState("auto"); // Default to Auto
+  const [selectedAgent, setSelectedAgent] = useState("auto");
 
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -78,10 +83,11 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Determine if it's an image for preview, otherwise it's a PDF/doc
       const previewUrl = file.type.startsWith("image/")
         ? URL.createObjectURL(file)
         : null;
-      setAttachment({ file, previewUrl, name: file.name });
+      setAttachment({ file, previewUrl, name: file.name, type: file.type });
     }
     e.target.value = null;
   };
@@ -103,7 +109,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
     onSendMessage({
       text: finalMessage,
       attachment: attachment?.file || null,
-      agent: selectedAgent, // Send the explicitly selected agent to the backend
+      agent: selectedAgent,
     });
 
     setText("");
@@ -135,7 +141,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
               />
             ) : (
               <div className="w-12 h-12 rounded-lg bg-purple-900/40 flex items-center justify-center border border-purple-500/30">
-                <ImageIcon className="text-purple-300 w-6 h-6" />
+                <FileText className="text-purple-300 w-6 h-6" />
               </div>
             )}
             <div className="flex flex-col pr-4">
@@ -155,7 +161,6 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
       </AnimatePresence>
 
       <div className="relative flex flex-col gap-2 bg-[#110624]/90 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-3 shadow-[0_0_30px_-10px_rgba(147,51,234,0.3)] transition-all focus-within:border-purple-400/60 focus-within:shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)]">
-        {/* Agent Selector Bar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-purple-500/20 pb-2 mb-1">
           {AGENTS.map((agent) => {
             const Icon = agent.icon;
@@ -164,14 +169,14 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
               <button
                 key={agent.id}
                 onClick={() => setSelectedAgent(agent.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                   isSelected
                     ? "bg-purple-600 text-white shadow-[0_0_10px_-2px_rgba(147,51,234,0.6)]"
                     : "bg-transparent text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-200 border border-transparent hover:border-purple-500/30"
                 }`}
               >
                 <Icon size={14} />
-                <span className="font-['Orbitron',sans-serif] tracking-wider">
+                <span className="font-['Orbitron',sans-serif] tracking-wider hidden sm:inline">
                   {agent.label}
                 </span>
               </button>
@@ -184,6 +189,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
+            accept="image/*,.pdf"
             className="hidden"
           />
           <button

@@ -23,6 +23,6 @@ const openrouterLLM = new ChatOpenRouter({
 
 export const getDesiredModel = (agent) => {
   if (agent === "coding") return openrouterLLM;
-  if (agent === "title") return googleLLM;
+  if (agent === "title" || agent === "imageAnalyzer") return googleLLM;
   return groqLLM;
 }

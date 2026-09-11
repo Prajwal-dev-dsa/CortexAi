@@ -9,13 +9,13 @@ import {
   setSelectedConversation,
   updateConversationTitle,
 } from "../redux/slices/conversationSlice";
-import { setUserData } from "../redux/slices/userSlice"; // NEW IMPORT
+import { setUserData } from "../redux/slices/userSlice";
 import { getAllMessages } from "../features/getAllMessages";
 import { createConversation } from "../features/createConversation";
 import { sendMessage } from "../features/sendMessage";
 import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle";
 import { generateTitleApi } from "../features/generateTitle";
-import { getCurrentUser } from "../features/getCurrentUser"; // NEW IMPORT
+import { getCurrentUser } from "../features/getCurrentUser";
 import ChatInput from "./ChatInput";
 
 export default function ChatArea() {
@@ -51,7 +51,33 @@ export default function ChatArea() {
 
   const handleSendMessage = async (payload) => {
     setIsProcessing(true);
+
+    // 1. CLONE FILE INTO MEMORY BEFORE UI TRANSITIONS
+    let safeFile = null;
+    if (payload.attachment) {
+      try {
+        const buffer = await payload.attachment.arrayBuffer();
+        safeFile = new File([buffer], payload.attachment.name, {
+          type: payload.attachment.type,
+        });
+      } catch (err) {
+        console.error("Failed to clone file:", err);
+        safeFile = payload.attachment;
+      }
+    }
+
     let activeConvoId = selectedConversation?._id;
+
+    // Use the protected safeFile for the immediate UI representation
+    const uiAttachment = safeFile
+      ? {
+          name: safeFile.name,
+          type: safeFile.type,
+          url: safeFile.type.startsWith("image/")
+            ? URL.createObjectURL(safeFile)
+            : null,
+        }
+      : null;
 
     if (!activeConvoId) {
       isAutoCreatingRef.current = true;
@@ -65,6 +91,7 @@ export default function ChatArea() {
           content: payload.text,
           role: "user",
           createdAt: new Date().toISOString(),
+          attachment: uiAttachment,
         };
 
         dispatch(setMessages([tempUserMsg]));
@@ -81,6 +108,7 @@ export default function ChatArea() {
         content: payload.text,
         role: "user",
         createdAt: new Date().toISOString(),
+        attachment: uiAttachment,
       };
       dispatch(addMessage(tempUserMsg));
     }
@@ -90,6 +118,7 @@ export default function ChatArea() {
         prompt: payload.text,
         conversationId: activeConvoId,
         agent: payload.agent,
+        file: safeFile, // Pass the protected file to the API
       });
 
       dispatch(
@@ -103,7 +132,6 @@ export default function ChatArea() {
         }),
       );
 
-      // REAL-TIME CREDIT SYNC: Fetch updated user data after a successful message
       const updatedUser = await getCurrentUser();
       if (updatedUser) {
         dispatch(setUserData(updatedUser));

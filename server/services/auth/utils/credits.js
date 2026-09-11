@@ -5,6 +5,8 @@ export const CREDITS_COST = {
     search: 20,
     coding: 75,
     pdf: 125,
-    image: 200,
-    ppt: 450
+    pdfRag: 200,
+    image: 300,
+    imageAnalyzer: 400,
+    ppt: 500
 }
