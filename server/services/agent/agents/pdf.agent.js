@@ -2,9 +2,18 @@ import { getDesiredModel } from "../config/llm.models.js";
 import { generatePdfBuffer } from "../utils/generatePdf.js";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { fetchFromS3 } from "../utils/fetchFromS3.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const pdfAgent = async (state) => {
     try {
+        const creditStatus = await deductCredits(state.userId, "pdf");
+        if (creditStatus === 400) {
+            return {
+                ...state,
+                aiResponse: "Sorry, you don't have enough credits to use this agent. Please top up your balance in the billing section.",
+            };
+        }
+        await deductCredits(state.userId, "pdf");
         const llm = getDesiredModel("pdf");
 
         const prompt = `

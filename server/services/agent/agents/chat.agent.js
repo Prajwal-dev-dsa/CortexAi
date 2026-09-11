@@ -1,19 +1,28 @@
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getDesiredModel } from "../config/llm.models.js";
 import { getMemory } from "../config/memory.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const chatAgent = async (state) => {
-    const llm = getDesiredModel("chat");
-    let searchContext = "";
-    const hasSearchData = state.searchResults &&
-        (typeof state.searchResults === 'string' ? state.searchResults.trim().length > 0 : Object.keys(state.searchResults).length > 0);
+    try {
+        const creditStatus = await deductCredits(state.userId, "chat");
+        if (creditStatus === 400) {
+            return {
+                ...state,
+                aiResponse: "Sorry, you don't have enough credits to use this agent. Please top up your balance in the billing section.",
+            };
+        }
+        const llm = getDesiredModel("chat");
+        let searchContext = "";
+        const hasSearchData = state.searchResults &&
+            (typeof state.searchResults === 'string' ? state.searchResults.trim().length > 0 : Object.keys(state.searchResults).length > 0);
 
-    if (hasSearchData) {
-        const formattedData = typeof state.searchResults === 'string'
-            ? state.searchResults
-            : JSON.stringify(state.searchResults, null, 2);
+        if (hasSearchData) {
+            const formattedData = typeof state.searchResults === 'string'
+                ? state.searchResults
+                : JSON.stringify(state.searchResults, null, 2);
 
-        searchContext = `
+            searchContext = `
             =========================================
             CRITICAL REAL-TIME DATA (SEARCH CONTEXT):
             You MUST use the following real-time search data to answer the user's query. 
@@ -23,8 +32,8 @@ export const chatAgent = async (state) => {
             ${formattedData}
             =========================================
         `;
-    }
-    const system_prompt = `You are the Chat Agent of an AI assistant called CortexAI.
+        }
+        const system_prompt = `You are the Chat Agent of an AI assistant called CortexAI.
 
     Your role is to handle normal, everyday conversations and general requests that do NOT require external tools unless search context is provided.
 
@@ -76,26 +85,33 @@ export const chatAgent = async (state) => {
     ${searchContext}
 `;
 
-    const historyMessages = await getMemory(state.conversationId);
-    const messages = [
-        new SystemMessage(system_prompt)
-    ];
+        const historyMessages = await getMemory(state.conversationId);
+        const messages = [
+            new SystemMessage(system_prompt)
+        ];
 
-    historyMessages.forEach((message) => {
-        if (message.role === "user") {
-            messages.push(new HumanMessage(message.content));
-        } else if (message.role === "assistant") {
-            messages.push(new AIMessage(message.content));
-        }
-    });
+        historyMessages.forEach((message) => {
+            if (message.role === "user") {
+                messages.push(new HumanMessage(message.content));
+            } else if (message.role === "assistant") {
+                messages.push(new AIMessage(message.content));
+            }
+        });
 
-    const user_prompt = state.userPrompt;
-    messages.push(new HumanMessage(user_prompt));
+        const user_prompt = state.userPrompt;
+        messages.push(new HumanMessage(user_prompt));
 
-    const response = await llm.invoke(messages);
+        const response = await llm.invoke(messages);
 
-    return {
-        ...state,
-        aiResponse: response.content
-    };
+        return {
+            ...state,
+            aiResponse: response.content
+        };
+    } catch (error) {
+        console.error("Error in chatAgent:", error);
+        return {
+            ...state,
+            aiResponse: "Sorry, I encountered an error while processing your request. Please try again."
+        };
+    }
 };

@@ -2,9 +2,18 @@ import { getDesiredModel } from "../config/llm.models.js";
 import { generatePptBuffer } from "../utils/generatePpt.js";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { fetchFromS3 } from "../utils/fetchFromS3.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const pptAgent = async (state) => {
     try {
+        const creditStatus = await deductCredits(state.userId, "ppt");
+        if (creditStatus === 400) {
+            return {
+                ...state,
+                aiResponse: "Sorry, you don't have enough credits to use this agent. Please top up your balance in the billing section.",
+            };
+        }
+        await deductCredits(state.userId, "ppt");
         const llm = getDesiredModel("ppt");
 
         const prompt = `

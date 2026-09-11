@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   MessageSquare,
   Plus,
@@ -24,29 +25,26 @@ import {
 import { setUserData, clearUserData } from "../redux/slices/userSlice";
 
 import DeleteModal from "./DeleteModal";
-import EditModal from "./EditModal"; // IMPORT NEW MODAL
+import EditModal from "./EditModal";
 
 import { createConversation } from "../features/createConversation";
 import { getConversations } from "../features/getConversations";
 import { deleteConversation } from "../features/deleteConversation";
-import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle"; // YOUR API
+import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle";
 import { getCurrentUser } from "../features/getCurrentUser";
 import { logOut } from "../features/logout";
 
 export default function Sidebar({ onLogoutSuccess }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { conversations, selectedConversation } = useSelector(
     (state) => state.conversation,
   );
   const { userData } = useSelector((state) => state.user);
 
   const [isExpanded, setIsExpanded] = useState(true);
-
-  // Delete Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
-
-  // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [chatToEdit, setChatToEdit] = useState(null);
 
@@ -63,6 +61,7 @@ export default function Sidebar({ onLogoutSuccess }) {
   }, [dispatch]);
 
   const handleNewChat = async () => {
+    navigate("/");
     const newChat = await createConversation();
     if (newChat) {
       dispatch(addConversation(newChat));
@@ -82,12 +81,8 @@ export default function Sidebar({ onLogoutSuccess }) {
 
   const confirmEdit = async (newTitle) => {
     if (!chatToEdit) return;
-    // Optimistic UI Update locally
     dispatch(updateConversationTitle({ id: chatToEdit._id, title: newTitle }));
-
-    // Call backend API
     await updateConversationTitleApi(chatToEdit._id, newTitle);
-
     setEditModalOpen(false);
     setChatToEdit(null);
   };
@@ -105,7 +100,6 @@ export default function Sidebar({ onLogoutSuccess }) {
         animate={{ width: isExpanded ? 280 : 72 }}
         className="h-screen bg-linear-to-b from-[#1A0B2E] to-[#070210] border-r border-purple-500/20 flex flex-col font-['Orbitron',sans-serif] relative overflow-hidden z-20"
       >
-        {/* Header & Toggle */}
         <div className="flex items-center p-4 h-16">
           <AnimatePresence mode="wait">
             {isExpanded && (
@@ -113,7 +107,8 @@ export default function Sidebar({ onLogoutSuccess }) {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="flex items-center gap-2 text-white font-bold text-lg tracking-wider"
+                className="flex items-center gap-2 text-white font-bold text-lg tracking-wider cursor-pointer"
+                onClick={() => navigate("/")}
               >
                 <div className="bg-purple-600/30 p-1 rounded-md border border-purple-500/50">
                   <BrainCircuit size={18} className="text-purple-300" />
@@ -124,7 +119,7 @@ export default function Sidebar({ onLogoutSuccess }) {
           </AnimatePresence>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-auto p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
+            className="ml-auto p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors shrink-0"
           >
             {isExpanded ? (
               <PanelLeftClose size={20} />
@@ -134,7 +129,6 @@ export default function Sidebar({ onLogoutSuccess }) {
           </button>
         </div>
 
-        {/* New Chat Button */}
         <div className="px-3 mb-4">
           <button
             onClick={handleNewChat}
@@ -142,7 +136,7 @@ export default function Sidebar({ onLogoutSuccess }) {
           >
             <Plus size={20} />
             {isExpanded && (
-              <span className="font-semibold text-sm tracking-wide">
+              <span className="font-semibold text-sm tracking-wide shrink-0">
                 New Chat
               </span>
             )}
@@ -155,7 +149,6 @@ export default function Sidebar({ onLogoutSuccess }) {
           </div>
         )}
 
-        {/* Conversation List */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 space-y-1 custom-scrollbar">
           <AnimatePresence>
             {conversations.map((chat) => (
@@ -165,7 +158,10 @@ export default function Sidebar({ onLogoutSuccess }) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                onClick={() => dispatch(setSelectedConversation(chat))}
+                onClick={() => {
+                  navigate("/");
+                  dispatch(setSelectedConversation(chat));
+                }}
                 className={`group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${selectedConversation?._id === chat._id ? "bg-purple-600/30 text-white" : "text-purple-200/70 hover:bg-purple-500/10 hover:text-white"}`}
               >
                 <MessageSquare size={18} className="shrink-0" />
@@ -175,25 +171,23 @@ export default function Sidebar({ onLogoutSuccess }) {
                       {chat.title || "New Chat"}
                     </span>
                     <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
-                      {/* EDIT BUTTON */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setChatToEdit(chat);
                           setEditModalOpen(true);
                         }}
-                        className="p-1.5 text-purple-300 hover:text-white hover:bg-purple-500/40 rounded-md transition-all"
+                        className="p-1.5 text-purple-300 hover:text-white hover:bg-purple-500/40 rounded-md transition-all shrink-0"
                       >
                         <Edit2 size={14} />
                       </button>
-                      {/* DELETE BUTTON */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setChatToDelete(chat._id);
                           setDeleteModalOpen(true);
                         }}
-                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-all"
+                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-md transition-all shrink-0"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -205,42 +199,88 @@ export default function Sidebar({ onLogoutSuccess }) {
           </AnimatePresence>
         </div>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-purple-500/20 bg-[#0F0524]">
+        <div
+          className={`border-t border-purple-500/20 bg-[#0A0214] z-20 transition-all duration-300 ${isExpanded ? "p-4" : "p-2 py-4"}`}
+        >
           <div
-            className={`flex items-center p-2 rounded-xl bg-purple-900/20 border border-purple-500/20 ${!isExpanded && "justify-center"}`}
+            className={`flex flex-col rounded-2xl bg-linear-to-b from-[#1D0B3B] to-[#0F0524] border border-purple-500/30 shadow-[0_0_20px_-10px_rgba(147,51,234,0.3)] transition-all ${isExpanded ? "p-3 gap-3" : "p-1.5 gap-2 items-center"}`}
           >
-            {userData?.avatar ? (
-              <img
-                src={userData.avatar}
-                alt="Profile"
-                className="w-10 h-10 rounded-full border border-purple-500/40 object-cover shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-purple-700/50 flex items-center justify-center border border-purple-500/40 shrink-0">
-                <User size={20} className="text-purple-200" />
+            <div
+              className={`flex items-center ${isExpanded ? "w-full" : "justify-center"}`}
+            >
+              <div className="relative shrink-0">
+                {userData?.avatar ? (
+                  <img
+                    src={userData.avatar}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full border border-purple-500/40 object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-purple-700/50 flex items-center justify-center border border-purple-500/40">
+                    <User size={20} className="text-purple-200" />
+                  </div>
+                )}
               </div>
-            )}
-            {isExpanded && (
-              <div className="ml-3 flex-1 overflow-hidden">
-                <div className="text-sm font-semibold text-white truncate">
-                  {userData?.name || "User"}
+
+              {isExpanded && (
+                <div className="ml-3 flex-1 overflow-hidden">
+                  <div className="text-sm font-bold text-white truncate tracking-wide">
+                    {userData?.name || "User"}
+                  </div>
+                  <div className="text-[10px] text-purple-300/60 truncate font-sans">
+                    {userData?.email || "Welcome back"}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-purple-200 bg-purple-600/40 px-2 py-0.5 rounded-full border border-purple-500/40 uppercase tracking-wider">
-                    Free
-                  </span>
-                  <Coins size={12} className="text-yellow-500" />
-                </div>
-              </div>
-            )}
+              )}
+
+              {isExpanded && (
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-purple-400 hover:text-red-400 hover:bg-red-500/20 rounded-lg transition-colors shrink-0 ml-2"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              )}
+            </div>
+
             {isExpanded && (
               <button
-                onClick={handleLogout}
-                className="p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors ml-2"
+                onClick={() => navigate("/billing")}
+                className="w-full flex items-center justify-between p-2.5 bg-black/20 hover:bg-black/40 border border-purple-500/20 rounded-xl transition-all duration-300 group shadow-inner mt-1"
               >
-                <LogOut size={18} />
+                <span className="bg-purple-600 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md tracking-wider shadow-md">
+                  {userData?.plan || "Free"}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Coins
+                    size={16}
+                    className="text-yellow-400 group-hover:scale-110 transition-transform duration-300 drop-shadow-md"
+                  />
+                  <span className="text-sm font-extrabold text-yellow-400 tracking-wide">
+                    {userData?.credits || 0}
+                  </span>
+                </div>
               </button>
+            )}
+
+            {!isExpanded && (
+              <>
+                <button
+                  onClick={() => navigate("/billing")}
+                  className="flex items-center justify-center w-10 h-10 bg-purple-900/40 rounded-lg border border-purple-500/30 hover:bg-purple-600/40 transition-colors shrink-0"
+                  title="View Billing Plans"
+                >
+                  <Coins size={18} className="text-yellow-400" />
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center w-10 h-10 text-purple-400 hover:text-red-400 hover:bg-red-500/20 rounded-lg transition-colors shrink-0"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -252,7 +292,6 @@ export default function Sidebar({ onLogoutSuccess }) {
         onConfirm={confirmDelete}
       />
 
-      {/* RENDER EDIT MODAL */}
       <EditModal
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}

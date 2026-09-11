@@ -1,6 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-
 const userSlice = createSlice({
     name: "user",
 
@@ -14,6 +13,11 @@ const userSlice = createSlice({
         },
         clearUserData: (state) => {
             state.userData = null;
+        },
+        updateUserCredits: (state, action) => {
+            if (state.userData) {
+                state.userData.credits = action.payload;
+            }
         }
     },
 });
@@ -21,6 +25,7 @@ const userSlice = createSlice({
 export const {
     setUserData,
     clearUserData,
+    updateUserCredits
 } = userSlice.actions;
 
 export default userSlice.reducer;

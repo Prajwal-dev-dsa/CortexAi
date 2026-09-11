@@ -3,6 +3,8 @@ import Home from "./pages/Home";
 import { getCurrentUser } from "./features/getCurrentUser";
 import { useDispatch } from "react-redux";
 import { setUserData } from "./redux/slices/userSlice";
+import Billing from "./pages/Billing";
+import { Routes, Route } from "react-router-dom";
 
 function App() {
   const dispatch = useDispatch();
@@ -21,7 +23,10 @@ function App() {
 
   return (
     <>
-      <Home />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/billing" element={<Billing />} />
+      </Routes>
     </>
   );
 }

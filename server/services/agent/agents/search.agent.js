@@ -1,7 +1,16 @@
 import { searchTool } from "../config/tavily.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const searchAgent = async (state) => {
     try {
+        const creditStatus = await deductCredits(state.userId, "search");
+        if (creditStatus === 400) {
+            return {
+                ...state,
+                aiResponse: "Sorry, you don't have enough credits to use this agent. Please top up your balance in the billing section.",
+            };
+        }
+        await deductCredits(state.userId, "search");
         const queryText = state.userPrompt;
 
         if (!queryText) {

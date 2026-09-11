@@ -23,8 +23,9 @@ app.use(cookieParser())
 app.use(morgan("dev"))
 
 app.use("/api/auth", proxy(process.env.AUTH_SERVICE_URL))
-app.use("/api/agent", protectedRoute, proxy(process.env.AGENT_SERVICE_URL))
+app.use("/api/agent", protectedRoute, proxyWithHeader(process.env.AGENT_SERVICE_URL))
 app.use("/api/chat", protectedRoute, proxyWithHeader(process.env.CHAT_SERVICE_URL))
+app.use("/api/billing", protectedRoute, proxyWithHeader(process.env.BILLING_SERVICE_URL))
 app.get("/api/me", protectedRoute, getCurrentUser)
 
 app.listen(PORT, () => {

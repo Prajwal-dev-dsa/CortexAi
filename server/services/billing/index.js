@@ -1,9 +1,8 @@
 import express from "express"
 import dotenv from "dotenv"
 import connectDB from "./config/db.js"
-import authRouter from "./routes/auth.route.js"
-import paymentRouter from "./routes/payment.route.js"
 import cookieParser from "cookie-parser"
+import router from "./routes/billing.route.js"
 
 dotenv.config()
 
@@ -12,13 +11,12 @@ const app = express()
 app.use(express.json())
 app.use(cookieParser())
 
-const PORT = process.env.PORT || 8001
+const PORT = process.env.PORT || 8004
 
-app.use("/", authRouter)
-app.use("/payment", paymentRouter)
+app.use("/", router)
 
 connectDB().then(() => {
     app.listen(PORT, () => {
-        console.log(`Auth service running on port ${PORT}`)
+        console.log(`Billing service running on port ${PORT}`)
     })
 })

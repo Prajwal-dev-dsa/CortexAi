@@ -1,10 +1,20 @@
 import { getDesiredModel } from "../config/llm.models.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const codingAgent = async (state) => {
-    const intentLLM = getDesiredModel("intent");
-    const llm = getDesiredModel("coding");
+    try {
+        const creditStatus = await deductCredits(state.userId, "coding");
+        if (creditStatus === 400) {
+            return {
+                ...state,
+                aiResponse: "Sorry, you don't have enough credits to use this agent. Please top up your balance in the billing section.",
+            };
+        }
+        await deductCredits(state.userId, "coding");
+        const intentLLM = getDesiredModel("intent");
+        const llm = getDesiredModel("coding");
 
-    const intentRes = await intentLLM.invoke(`
+        const intentRes = await intentLLM.invoke(`
         You are a coding intent classifier.
 
         Your task is to identify what the user wants to do with their code.
@@ -74,8 +84,8 @@ export const codingAgent = async (state) => {
         ${state.userPrompt}
     `);
 
-    if (intentRes.content.trim() === "CODE_GENERATION") {
-        const system_prompt = `
+        if (intentRes.content.trim() === "CODE_GENERATION") {
+            const system_prompt = `
         You are CortexAI Coding Agent.
 
         Your job is to generate the code or project requested by the user.
@@ -168,43 +178,43 @@ export const codingAgent = async (state) => {
         ${state.userPrompt}
         `;
 
-        const res = await llm.invoke(system_prompt);
-        let rawContent = res.content.trim();
+            const res = await llm.invoke(system_prompt);
+            let rawContent = res.content.trim();
 
-        if (rawContent.startsWith("```")) {
-            const match = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-            if (match) {
-                rawContent = match[1].trim();
+            if (rawContent.startsWith("```")) {
+                const match = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                if (match) {
+                    rawContent = match[1].trim();
+                }
             }
-        }
 
-        let data;
-        try {
-            data = JSON.parse(rawContent);
-        } catch (error) {
-            console.error("JSON Parsing failed:", error);
+            let data;
+            try {
+                data = JSON.parse(rawContent);
+            } catch (error) {
+                console.error("JSON Parsing failed:", error);
+                return {
+                    ...state,
+                    aiResponse: "I encountered an error generating the code structure (the response may have been too long or malformed). Please ask me to generate the components in smaller parts.",
+                    artifacts: []
+                };
+            }
+
             return {
                 ...state,
-                aiResponse: "I encountered an error generating the code structure (the response may have been too long or malformed). Please ask me to generate the components in smaller parts.",
-                artifacts: []
+                aiResponse: "Code Generated Successfully. Check the Artifact panel.",
+                artifacts: [
+                    {
+                        id: Date.now(),
+                        type: "code",
+                        files: data.files || [],
+                        title: "Generated Code"
+                    }
+                ]
             };
         }
 
-        return {
-            ...state,
-            aiResponse: "Code Generated Successfully. Check the Artifact panel.",
-            artifacts: [
-                {
-                    id: Date.now(),
-                    type: "code",
-                    files: data.files || [],
-                    title: "Generated Code"
-                }
-            ]
-        };
-    }
-
-    const system_prompt = `
+        const system_prompt = `
         You are CortexAI Coding Assistant.
 
         PURPOSE:
@@ -256,12 +266,20 @@ export const codingAgent = async (state) => {
         PROJECT_SETUP: Explain setup steps, provide installation commands and configuration. Do not generate complete project files.
         `;
 
-    const res = await llm.invoke(system_prompt);
-    const data = res.content;
+        const res = await llm.invoke(system_prompt);
+        const data = res.content;
 
-    return {
-        ...state,
-        aiResponse: data,
-        artifacts: []
-    };
+        return {
+            ...state,
+            aiResponse: data,
+            artifacts: []
+        };
+    } catch (error) {
+        console.error("Error in coding agent:", error);
+        return {
+            ...state,
+            aiResponse: "An error occurred while processing your request. Please try again.",
+            artifacts: []
+        };
+    }
 };

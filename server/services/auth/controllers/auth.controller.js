@@ -2,6 +2,7 @@ import "../config/firebase.js";
 import { getAuth } from "firebase-admin/auth";
 import { UserModel } from "../models/user.model.js";
 import redis from "../../../shared/redis/redis.js";
+import crypto from "crypto";
 
 export const login = async (req, res) => {
     try {
@@ -30,7 +31,7 @@ export const login = async (req, res) => {
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
-
+        await redis.set(`user-session-${user._id}`, sessionId, "EX", 7 * 24 * 60 * 60);
         await redis.set(`session:${sessionId}`, JSON.stringify(user), "EX", 7 * 24 * 60 * 60);
         res.json({ message: "Login Successful", user });
     } catch (error) {

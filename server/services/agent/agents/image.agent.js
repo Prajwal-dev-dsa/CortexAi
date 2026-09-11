@@ -2,9 +2,18 @@ import { getDesiredModel } from "../config/llm.models.js";
 import axios from "axios";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { fetchFromS3 } from "../utils/fetchFromS3.js";
+import { deductCredits } from "../utils/deductCredits.js";
 
 export const imageAgent = async (state) => {
     try {
+        const creditStatus = await deductCredits(state.userId, "image");
+        if (creditStatus === 400) {
+            return {
+                ...state,
+                aiResponse: "Sorry, you don't have enough credits to use this agent. Please top up your balance in the billing section.",
+            };
+        }
+        await deductCredits(state.userId, "image");
         const llm = getDesiredModel("image");
         const res = await llm.invoke(`
             You are an expert AI Image Prompt Engineer.

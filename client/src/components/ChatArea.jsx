@@ -9,11 +9,13 @@ import {
   setSelectedConversation,
   updateConversationTitle,
 } from "../redux/slices/conversationSlice";
+import { setUserData } from "../redux/slices/userSlice"; // NEW IMPORT
 import { getAllMessages } from "../features/getAllMessages";
 import { createConversation } from "../features/createConversation";
 import { sendMessage } from "../features/sendMessage";
 import { updateConversationTitle as updateConversationTitleApi } from "../features/updateConversationTitle";
 import { generateTitleApi } from "../features/generateTitle";
+import { getCurrentUser } from "../features/getCurrentUser"; // NEW IMPORT
 import ChatInput from "./ChatInput";
 
 export default function ChatArea() {
@@ -23,17 +25,13 @@ export default function ChatArea() {
   const { messages } = useSelector((state) => state.message);
 
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Track when we are creating a new chat from the default screen
   const isAutoCreatingRef = useRef(false);
 
-  // Calculate Greeting based on time
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
   const firstName = userData?.name?.split(" ")[0] || "User";
 
-  // Fetch messages when conversation changes
   useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedConversation) {
@@ -88,14 +86,12 @@ export default function ChatArea() {
     }
 
     try {
-      // Pass the explicitly chosen agent to the backend
       const response = await sendMessage({
         prompt: payload.text,
         conversationId: activeConvoId,
         agent: payload.agent,
       });
 
-      // Dispatch the new object structure (response text + images)
       dispatch(
         addMessage({
           _id: (Date.now() + 1).toString(),
@@ -107,11 +103,13 @@ export default function ChatArea() {
         }),
       );
 
-      // ==========================================
-      // AUTO-RENAME LOGIC: Trigger as a background task
-      // ==========================================
+      // REAL-TIME CREDIT SYNC: Fetch updated user data after a successful message
+      const updatedUser = await getCurrentUser();
+      if (updatedUser) {
+        dispatch(setUserData(updatedUser));
+      }
+
       if (messages.length === 0) {
-        // Pass response.response so it extracts the actual string, not an object
         generateTitleApi(payload.text, response.response)
           .then((generatedTitle) => {
             if (generatedTitle) {
@@ -166,7 +164,6 @@ export default function ChatArea() {
               </div>
             </div>
 
-            {/* Messages Area */}
             <MessageList
               messages={messages}
               isProcessing={isProcessing}
