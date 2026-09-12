@@ -3,9 +3,11 @@ import { generatePptBuffer } from "../utils/generatePpt.js";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { fetchFromS3 } from "../utils/fetchFromS3.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { rateLimiting } from "../config/rate.limiting.js";
 
 export const pptAgent = async (state) => {
     try {
+        await rateLimiting(state.userId, "ppt");
         const creditStatus = await deductCredits(state.userId, "ppt");
         if (creditStatus === 400) {
             return {
@@ -91,6 +93,12 @@ export const pptAgent = async (state) => {
 
     } catch (error) {
         console.error("PPT agent error:", error);
+        if (error.status === 429) {
+            return {
+                ...state,
+                aiResponse: error.message || "Sorry, you have exceeded the rate limit. Please try again later."
+            };
+        }
         return {
             ...state,
             aiResponse: "Sorry, I encountered an issue generating your PowerPoint presentation. Please try again.",

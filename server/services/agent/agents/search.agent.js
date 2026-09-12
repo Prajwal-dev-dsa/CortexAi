@@ -1,8 +1,10 @@
 import { searchTool } from "../config/tavily.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { rateLimiting } from "../config/rate.limiting.js";
 
 export const searchAgent = async (state) => {
     try {
+        await rateLimiting(state.userId, "search");
         const creditStatus = await deductCredits(state.userId, "search");
         if (creditStatus === 400) {
             return {
@@ -43,6 +45,14 @@ export const searchAgent = async (state) => {
         };
     } catch (error) {
         console.error("Search agent error:", error);
+        if (error.status === 429) {
+            return {
+                ...state,
+                aiResponse: error.message || "Sorry, you have exceeded the rate limit. Please try again later.",
+                searchResults: [],
+                searchImages: []
+            };
+        }
         return {
             ...state,
             searchResults: [],

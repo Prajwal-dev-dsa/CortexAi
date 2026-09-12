@@ -12,6 +12,17 @@ const PORT = process.env.PORT || 8003
 
 app.use("/", router)
 
+app.use((err, req, res, next) => {
+    console.error(err);
+    if (res.status === 429) {
+        return res.status(429).json({
+            error: err.message,
+            data: err.data || null
+        });
+    }
+    return next(err);
+});
+
 app.listen(PORT, () => {
     console.log(`Agent service running on port ${PORT}`)
 })

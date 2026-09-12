@@ -5,7 +5,7 @@ import { addNewMessage } from "../config/memory.js";
 
 dotenv.config();
 
-export const agentController = async (req, res) => {
+export const agentController = async (req, res, next) => {
     try {
         const { prompt, conversationId, agent } = req.body;
         const fileType = req.file;
@@ -61,6 +61,6 @@ export const agentController = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: `Error in agent controller: ${error.message}` });
+        return next(error);
     }
 };

@@ -2,9 +2,11 @@ import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages
 import { getDesiredModel } from "../config/llm.models.js";
 import { getMemory } from "../config/memory.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { rateLimiting } from "../config/rate.limiting.js";
 
 export const chatAgent = async (state) => {
     try {
+        await rateLimiting(state.userId, "chat")
         const creditStatus = await deductCredits(state.userId, "chat");
         if (creditStatus === 400) {
             return {
@@ -109,6 +111,12 @@ export const chatAgent = async (state) => {
         };
     } catch (error) {
         console.error("Error in chatAgent:", error);
+        if (error.status === 429) {
+            return {
+                ...state,
+                aiResponse: error.message || "Sorry, you have exceeded the rate limit. Please try again later."
+            };
+        }
         return {
             ...state,
             aiResponse: "Sorry, I encountered an error while processing your request. Please try again."

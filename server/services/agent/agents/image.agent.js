@@ -3,9 +3,11 @@ import axios from "axios";
 import { uploadToS3 } from "../utils/uploadToS3.js";
 import { fetchFromS3 } from "../utils/fetchFromS3.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { rateLimiting } from "../config/rate.limiting.js";
 
 export const imageAgent = async (state) => {
     try {
+        await rateLimiting(state.userId, "image");
         const creditStatus = await deductCredits(state.userId, "image");
         if (creditStatus === 400) {
             return {
@@ -70,6 +72,15 @@ export const imageAgent = async (state) => {
         };
     } catch (error) {
         console.error("Image agent error:", error);
-        return { ...state, aiResponse: "Sorry, I couldn't generate the image. Please try again." };
+        if (error.status === 429) {
+            return {
+                ...state,
+                aiResponse: error.message || "Sorry, you have exceeded the rate limit. Please try again later."
+            };
+        }
+        return {
+            ...state,
+            aiResponse: "Sorry, I couldn't generate the image. Please try again."
+        };
     }
 }

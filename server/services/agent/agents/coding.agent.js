@@ -1,8 +1,10 @@
 import { getDesiredModel } from "../config/llm.models.js";
 import { deductCredits } from "../utils/deductCredits.js";
+import { rateLimiting } from "../config/rate.limiting.js";
 
 export const codingAgent = async (state) => {
     try {
+        await rateLimiting(state.userId, "coding");
         const creditStatus = await deductCredits(state.userId, "coding");
         if (creditStatus === 400) {
             return {
@@ -276,6 +278,13 @@ export const codingAgent = async (state) => {
         };
     } catch (error) {
         console.error("Error in coding agent:", error);
+        if (error.status === 429) {
+            return {
+                ...state,
+                aiResponse: error.message || "Sorry, you have exceeded the rate limit. Please try again later.",
+                artifacts: []
+            };
+        }
         return {
             ...state,
             aiResponse: "An error occurred while processing your request. Please try again.",

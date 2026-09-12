@@ -2,9 +2,11 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getDesiredModel } from "../config/llm.models.js";
 import fs from "fs/promises";
 import { deductCredits } from "../utils/deductCredits.js";
+import { rateLimiting } from "../config/rate.limiting.js";
 
 export const imageAnalyzerAgent = async (state) => {
     try {
+        await rateLimiting(state.userId, "imageAnalyzer");
         const creditStatus = await deductCredits(state.userId, "imageAnalyzer");
         if (creditStatus === 400) {
             return {
@@ -95,6 +97,12 @@ export const imageAnalyzerAgent = async (state) => {
 
     } catch (error) {
         console.error("Image analysis failed:", error);
+        if (error.status === 429) {
+            return {
+                ...state,
+                aiResponse: error.message || "Sorry, you have exceeded the rate limit. Please try again later."
+            };
+        }
         return {
             ...state,
             aiResponse: "Sorry, I encountered an error while analyzing the image. Please try again."
