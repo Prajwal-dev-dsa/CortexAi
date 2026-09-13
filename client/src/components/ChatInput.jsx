@@ -19,7 +19,6 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 
-// Expanded to include the new RAG and Analyzer agents
 const AGENTS = [
   { id: "auto", label: "Auto", icon: Zap },
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -83,7 +82,6 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Determine if it's an image for preview, otherwise it's a PDF/doc
       const previewUrl = file.type.startsWith("image/")
         ? URL.createObjectURL(file)
         : null;
@@ -124,7 +122,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
   };
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto p-4 font-['Orbitron',sans-serif]">
+    <div className="relative w-full max-w-4xl mx-auto p-1 sm:p-4 font-['Orbitron',sans-serif]">
       <AnimatePresence>
         {attachment && (
           <motion.div
@@ -145,7 +143,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
               </div>
             )}
             <div className="flex flex-col pr-4">
-              <span className="text-xs text-purple-200 truncate max-w-37.5">
+              <span className="text-xs text-purple-200 truncate max-w-30 sm:max-w-37.5">
                 {attachment.name}
               </span>
               <span className="text-[10px] text-purple-400">Ready to send</span>
@@ -160,8 +158,8 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
         )}
       </AnimatePresence>
 
-      <div className="relative flex flex-col gap-2 bg-[#110624]/90 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-3 shadow-[0_0_30px_-10px_rgba(147,51,234,0.3)] transition-all focus-within:border-purple-400/60 focus-within:shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)]">
-        <div className="flex flex-wrap items-center gap-2 border-b border-purple-500/20 pb-2 mb-1">
+      <div className="relative flex flex-col gap-2 bg-[#110624]/90 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-2 sm:p-3 shadow-[0_0_30px_-10px_rgba(147,51,234,0.3)] transition-all focus-within:border-purple-400/60 focus-within:shadow-[0_0_30px_-5px_rgba(147,51,234,0.5)]">
+        <div className="flex items-center gap-1.5 sm:gap-2 border-b border-purple-500/20 pb-2.5 sm:pb-3 mb-1.5 sm:mb-2 overflow-x-auto custom-scrollbar w-full">
           {AGENTS.map((agent) => {
             const Icon = agent.icon;
             const isSelected = selectedAgent === agent.id;
@@ -169,14 +167,14 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
               <button
                 key={agent.id}
                 onClick={() => setSelectedAgent(agent.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold transition-all shrink-0 ${
                   isSelected
                     ? "bg-purple-600 text-white shadow-[0_0_10px_-2px_rgba(147,51,234,0.6)]"
                     : "bg-transparent text-purple-300/70 hover:bg-purple-500/20 hover:text-purple-200 border border-transparent hover:border-purple-500/30"
                 }`}
               >
                 <Icon size={14} />
-                <span className="font-['Orbitron',sans-serif] tracking-wider hidden sm:inline">
+                <span className="font-['Orbitron',sans-serif] tracking-wider hidden sm:inline whitespace-nowrap">
                   {agent.label}
                 </span>
               </button>
@@ -184,7 +182,8 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
           })}
         </div>
 
-        <div className="flex items-end gap-2 w-full">
+        {/* UPDATED: Added min-w-0 to prevent flexbox from crushing the textarea */}
+        <div className="flex items-end gap-1 sm:gap-2 w-full min-w-0">
           <input
             type="file"
             ref={fileInputRef}
@@ -194,7 +193,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2.5 text-purple-400 hover:text-purple-200 hover:bg-purple-500/20 rounded-xl transition-colors shrink-0 mb-0.5"
+            className="p-2 sm:p-2.5 text-purple-400 hover:text-purple-200 hover:bg-purple-500/20 rounded-xl transition-colors shrink-0 mb-0.5"
             title="Attach file"
           >
             <Paperclip size={20} />
@@ -207,10 +206,8 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
             onKeyDown={handleKeyDown}
             onClick={handleInputClick}
             readOnly={listening}
-            placeholder={
-              listening ? "Listening... (Click to type)" : "Ask Anything..."
-            }
-            className={`flex-1 bg-transparent text-white placeholder-purple-300/40 resize-none outline-none py-2.5 px-2 max-h-32 custom-scrollbar text-sm font-sans tracking-wide ${listening ? "cursor-default opacity-80" : "cursor-text opacity-100"}`}
+            placeholder={listening ? "Listening..." : "Ask Anything..."}
+            className={`flex-1 min-w-0 bg-transparent text-white placeholder-purple-300/40 resize-none outline-none py-2.5 px-1 sm:px-2 max-h-32 custom-scrollbar text-sm md:text-md font-dm font-mono tracking-wide ${listening ? "cursor-default opacity-80" : "cursor-text opacity-100"}`}
             rows={1}
             style={{ minHeight: "44px" }}
           />
@@ -219,7 +216,7 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
             {browserSupportsSpeechRecognition && (
               <button
                 onClick={toggleListening}
-                className={`p-2.5 rounded-xl transition-all ${listening ? "bg-red-500/20 text-red-400 animate-pulse border border-red-500/50" : "text-purple-400 hover:text-purple-200 hover:bg-purple-500/20"}`}
+                className={`p-2 sm:p-2.5 rounded-xl transition-all ${listening ? "bg-red-500/20 text-red-400 animate-pulse border border-red-500/50" : "text-purple-400 hover:text-purple-200 hover:bg-purple-500/20"}`}
                 title="Voice typing"
               >
                 <Mic size={20} />
@@ -229,11 +226,13 @@ export default function ChatInput({ onSendMessage, isProcessing }) {
             <button
               onClick={handleSend}
               disabled={isProcessing || (!displayValue.trim() && !attachment)}
-              className="p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_-3px_rgba(147,51,234,0.5)]"
+              className="p-2 sm:p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_-3px_rgba(147,51,234,0.5)]"
             >
               <Send
                 size={18}
-                className={isProcessing ? "opacity-50" : "opacity-100 ml-0.5"}
+                className={
+                  isProcessing ? "opacity-50" : "opacity-100 sm:ml-0.5"
+                }
               />
             </button>
           </div>

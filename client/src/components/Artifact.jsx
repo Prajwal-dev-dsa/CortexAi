@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { motion } from "framer-motion";
 import {
   Code,
   Play,
@@ -11,6 +10,7 @@ import {
   Copy,
   Check,
   ExternalLink,
+  ChevronDown,
 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { getLanguageFromFileName } from "../../utils/fileUtils";
@@ -21,11 +21,10 @@ export default function Artifact() {
   );
   const { messages } = useSelector((state) => state.message);
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("code"); // 'code' | 'preview'
+  const [activeTab, setActiveTab] = useState("code");
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  // Derive the latest artifact from the conversation history
   const currentArtifact = useMemo(() => {
     const latestMsg = [...messages]
       .reverse()
@@ -33,7 +32,6 @@ export default function Artifact() {
     return latestMsg?.artifacts?.[0] || null;
   }, [messages]);
 
-  // Auto-open panel and reset tabs when a new artifact arrives
   useEffect(() => {
     if (currentArtifact) {
       setIsOpen(true);
@@ -42,11 +40,9 @@ export default function Artifact() {
     }
   }, [currentArtifact]);
 
-  // Pulling from the newly corrected .files array
   const files = currentArtifact?.files || [];
   const hasHtml = files.some((f) => f.name.endsWith(".html"));
 
-  // Dynamically inject CSS and JS into the HTML for the preview iframe
   const previewSrcDoc = useMemo(() => {
     if (!hasHtml) return "";
 
@@ -77,7 +73,6 @@ export default function Artifact() {
     return finalHtml;
   }, [files, hasHtml]);
 
-  // Handle copying the currently active file's code
   const handleCopyCode = () => {
     const currentCode = files[activeFileIndex]?.content || "";
     navigator.clipboard.writeText(currentCode);
@@ -85,7 +80,6 @@ export default function Artifact() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Handle opening the HTML preview in a new browser tab
   const handleFullScreenPreview = () => {
     const newWindow = window.open("", "_blank");
     if (newWindow) {
@@ -94,44 +88,38 @@ export default function Artifact() {
     }
   };
 
-  // If no artifact exists in the conversation yet, don't render anything
   if (!currentArtifact) return null;
 
   return (
-    <motion.div
-      initial={false}
-      // Toggles width between expanded view and the narrow mini-sidebar
-      animate={{ width: isOpen ? "45%" : "60px" }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="h-full border-l border-purple-500/20 bg-[#0A0214] flex flex-col font-['Orbitron',sans-serif] z-20 overflow-hidden shrink-0 shadow-[-20px_0_50px_-15px_rgba(147,51,234,0.15)] relative"
+    <div
+      className={`font-['Orbitron',sans-serif] z-50 shrink-0 transition-all duration-300 overflow-hidden shadow-[-20px_0_50px_-15px_rgba(147,51,234,0.15)] ${
+        isOpen
+          ? "fixed inset-0 w-full h-full bg-[#0A0214] flex flex-col md:relative md:w-[45%] md:border-l md:border-purple-500/20"
+          : "fixed bottom-40 right-4 w-14 h-14 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.4)] flex md:bg-[#0A0214] md:w-15 md:h-full md:relative md:bottom-auto md:right-auto md:rounded-none md:flex-col md:border-l md:border-purple-500/20"
+      }`}
     >
       {isOpen ? (
-        /* =========================================
-           EXPANDED ARTIFACT VIEW
-           ========================================= */
-        <div className="flex flex-col h-full w-full min-w-100">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-purple-500/20 bg-[#0F0524] shrink-0">
+        <div className="flex flex-col h-full w-full min-w-25">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-purple-500/20 bg-[#0F0524] shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/30">
+              <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/30 hidden sm:block">
                 <Terminal size={18} className="text-purple-300" />
               </div>
               <div className="flex flex-col">
-                <h3 className="text-sm font-bold text-white tracking-wide truncate max-w-65">
+                <h3 className="text-sm font-bold text-white tracking-wide truncate max-w-37.5 sm:max-w-50">
                   {selectedConversation?.title || "Generated Code"}
                 </h3>
                 <span className="text-[10px] text-purple-400/60 uppercase tracking-widest">
-                  Artifact Environment
+                  Artifact
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {/* Contextual Action Button: Copy Code OR Full Screen */}
               {activeTab === "code" ? (
                 <button
                   onClick={handleCopyCode}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-400 hover:text-white hover:bg-purple-500/20 border border-purple-500/20 transition-all mr-1"
+                  className=" items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-400 hover:text-white hover:bg-purple-500/20 border border-purple-500/20 transition-all mr-1"
                   title="Copy current file"
                 >
                   {copied ? (
@@ -143,7 +131,7 @@ export default function Artifact() {
               ) : (
                 <button
                   onClick={handleFullScreenPreview}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-400 hover:text-white hover:bg-purple-500/20 border border-purple-500/20 transition-all mr-1"
+                  className=" items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-400 hover:text-white hover:bg-purple-500/20 border border-purple-500/20 transition-all mr-1"
                   title="Open in new tab"
                 >
                   <ExternalLink size={14} />
@@ -155,32 +143,33 @@ export default function Artifact() {
                   onClick={() => setActiveTab("code")}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeTab === "code" ? "bg-purple-600 text-white shadow-md" : "text-purple-300/60 hover:text-white"}`}
                 >
-                  <Code size={14} /> Code
+                  <Code size={14} />{" "}
+                  <span className="hidden sm:inline">Code</span>
                 </button>
                 {hasHtml && (
                   <button
                     onClick={() => setActiveTab("preview")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeTab === "preview" ? "bg-purple-600 text-white shadow-md" : "text-purple-300/60 hover:text-white"}`}
                   >
-                    <Play size={14} /> Preview
+                    <Play size={14} />{" "}
+                    <span className="hidden sm:inline">Preview</span>
                   </button>
                 )}
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 ml-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
+                className="p-2 ml-1 sm:ml-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
                 title="Collapse Artifact"
               >
-                <PanelRightClose size={20} />
+                <PanelRightClose size={20} className="hidden md:block" />
+                <ChevronDown size={24} className="md:hidden block" />
               </button>
             </div>
           </div>
 
-          {/* Content Area */}
           <div className="flex-1 flex flex-col min-h-0 bg-[#070210] font-sans">
             {activeTab === "code" ? (
               <>
-                {/* File Explorer Tabs */}
                 <div className="flex overflow-x-auto custom-scrollbar border-b border-purple-500/10 bg-[#0A0214] shrink-0">
                   {files.map((file, idx) => (
                     <button
@@ -201,7 +190,6 @@ export default function Artifact() {
                   ))}
                 </div>
 
-                {/* Monaco Editor */}
                 <div className="flex-1 w-full pt-4 min-h-0">
                   <Editor
                     height="100%"
@@ -222,7 +210,6 @@ export default function Artifact() {
                 </div>
               </>
             ) : (
-              /* HTML Preview Iframe */
               <div className="flex-1 w-full bg-white p-2 min-h-0">
                 <iframe
                   title="artifact-preview"
@@ -235,33 +222,41 @@ export default function Artifact() {
           </div>
         </div>
       ) : (
-        /* =========================================
-           COLLAPSED MINI-SIDEBAR VIEW
-           ========================================= */
-        <div className="flex flex-col items-center w-full h-full py-4 bg-[#0F0524]">
-          <button
-            onClick={() => setIsOpen(true)}
-            className="p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
-            title="Expand Artifact"
-          >
-            <PanelRightOpen size={20} />
-          </button>
+        <div
+          className="flex flex-col items-center justify-center w-full h-full cursor-pointer md:cursor-default md:py-4"
+          onClick={() => setIsOpen(true)}
+        >
+          <div className="md:hidden flex items-center justify-center w-full h-full text-white">
+            <Code size={24} />
+          </div>
 
-          {/* Rotated text identifying the collapsed artifact */}
-          <div className="mt-8 flex flex-col items-center gap-4 text-purple-400/50">
-            <Code size={18} />
-            <span
-              className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
-              style={{
-                writingMode: "vertical-rl",
-                transform: "rotate(180deg)",
+          <div className="hidden md:flex flex-col items-center w-full h-full">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(true);
               }}
+              className="p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
+              title="Expand Artifact"
             >
-              {selectedConversation.title || "Generated Code"}
-            </span>
+              <PanelRightOpen size={20} />
+            </button>
+
+            <div className="mt-8 flex flex-col items-center gap-4 text-purple-400/50">
+              <Code size={18} />
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
+                style={{
+                  writingMode: "vertical-rl",
+                  transform: "rotate(180deg)",
+                }}
+              >
+                {selectedConversation?.title || "Generated Code"}
+              </span>
+            </div>
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

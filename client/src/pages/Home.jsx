@@ -9,14 +9,16 @@ import { signInWithPopup } from "firebase/auth";
 import { setUserData } from "../redux/slices/userSlice";
 import Sidebar from "../components/Sidebar";
 import ChatArea from "../components/ChatArea";
-import Artifact from "../components/Artifact"; // ADDED: Import the new Artifact component
+import Artifact from "../components/Artifact";
 
 export default function Home() {
   const dispatch = useDispatch();
   const { userData } = useSelector((state) => state.user);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Check if the user is logged in based on Redux state
+  // NEW: Global mobile sidebar state
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
   const isAuthenticated = Boolean(userData);
 
   const handleLogin = async (token) => {
@@ -64,7 +66,6 @@ export default function Home() {
 
   return (
     <>
-      {/* Global styles for Font and Custom Scrollbar */}
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
@@ -85,13 +86,9 @@ export default function Home() {
         `}
       </style>
 
-      {/* Root wrapper enforces dark background during AnimatePresence unmount/mount */}
       <div className="bg-[#070210] min-h-screen w-full">
         <AnimatePresence mode="wait">
           {isAuthenticated ? (
-            /* =========================================
-               MAIN APPLICATION LAYOUT
-               ========================================= */
             <motion.div
               key="app"
               initial={{ opacity: 0 }}
@@ -100,22 +97,20 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               className="flex h-screen w-full bg-[#070210] overflow-hidden font-['Orbitron',sans-serif] text-white"
             >
-              {/* 1. Sidebar Component */}
-              <Sidebar />
+              {/* UPDATED: Passing mobile state to Sidebar */}
+              <Sidebar
+                isMobileOpen={isMobileOpen}
+                setIsMobileOpen={setIsMobileOpen}
+              />
 
-              {/* 2. REAL CHAT AREA Component */}
-              {/* Added min-w-0 to prevent flexbox overflow issues when Artifact slides in */}
               <div className="flex-1 min-w-0 flex flex-col border-r border-purple-500/20 relative z-10 overflow-hidden bg-[#070210]">
-                <ChatArea />
+                {/* UPDATED: Passing toggle function to ChatArea */}
+                <ChatArea onOpenSidebar={() => setIsMobileOpen(true)} />
               </div>
 
-              {/* 3. DYNAMIC ARTIFACT Component */}
               <Artifact />
             </motion.div>
           ) : (
-            /* =========================================
-               LOGIN SCREEN LAYOUT
-               ========================================= */
             <motion.div
               key="login"
               initial={{ opacity: 0 }}
@@ -124,7 +119,6 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               className="relative min-h-screen w-full bg-linear-to-br from-[#2D1657] via-[#110624] to-[#070210] flex items-center justify-center overflow-hidden font-['Orbitron',sans-serif] text-white"
             >
-              {/* Animated Ambient Background */}
               <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                 <motion.div
                   animate={{
@@ -156,7 +150,6 @@ export default function Home() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 bg-purple-500/15 blur-[120px] rounded-full" />
               </div>
 
-              {/* Premium Login Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -172,7 +165,6 @@ export default function Home() {
                     animate="visible"
                     className="flex flex-col items-center text-center"
                   >
-                    {/* AI Badge */}
                     <motion.div
                       variants={itemVariants}
                       className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-purple-400/40 bg-purple-500/20 shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)]"
@@ -183,7 +175,6 @@ export default function Home() {
                       </span>
                     </motion.div>
 
-                    {/* Logo / Branding */}
                     <motion.div
                       variants={itemVariants}
                       className="mb-2 relative"
@@ -195,7 +186,6 @@ export default function Home() {
                       />
                     </motion.div>
 
-                    {/* Typography */}
                     <motion.div variants={itemVariants} className="mb-8 mt-2">
                       <h1 className="text-3xl font-semibold tracking-wide mb-3 text-white drop-shadow-md">
                         Welcome back
@@ -205,7 +195,6 @@ export default function Home() {
                       </p>
                     </motion.div>
 
-                    {/* Divider */}
                     <motion.div
                       variants={itemVariants}
                       className="w-full flex items-center gap-4 mb-8"
@@ -217,7 +206,6 @@ export default function Home() {
                       <div className="flex-1 h-px bg-linear-to-l from-transparent to-purple-400/30" />
                     </motion.div>
 
-                    {/* Google Authentication Button */}
                     <motion.div variants={itemVariants} className="w-full mb-6">
                       <motion.button
                         whileHover={{ scale: 1.02 }}
@@ -256,7 +244,6 @@ export default function Home() {
                       </motion.button>
                     </motion.div>
 
-                    {/* Legal / Footer Text */}
                     <motion.div variants={itemVariants}>
                       <p className="text-[10px] text-purple-200/50 font-normal text-center leading-relaxed max-w-70 tracking-wide mx-auto">
                         By continuing, you agree to our{" "}

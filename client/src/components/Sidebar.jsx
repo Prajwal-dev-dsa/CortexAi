@@ -13,6 +13,7 @@ import {
   Coins,
   LogOut,
   BrainCircuit,
+  X,
 } from "lucide-react";
 
 import {
@@ -34,7 +35,11 @@ import { updateConversationTitle as updateConversationTitleApi } from "../featur
 import { getCurrentUser } from "../features/getCurrentUser";
 import { logOut } from "../features/logout";
 
-export default function Sidebar({ onLogoutSuccess }) {
+export default function Sidebar({
+  onLogoutSuccess,
+  isMobileOpen,
+  setIsMobileOpen,
+}) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { conversations, selectedConversation } = useSelector(
@@ -47,6 +52,8 @@ export default function Sidebar({ onLogoutSuccess }) {
   const [chatToDelete, setChatToDelete] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [chatToEdit, setChatToEdit] = useState(null);
+
+  const showText = isExpanded || isMobileOpen;
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -62,6 +69,7 @@ export default function Sidebar({ onLogoutSuccess }) {
 
   const handleNewChat = async () => {
     navigate("/");
+    if (isMobileOpen) setIsMobileOpen(false);
     const newChat = await createConversation();
     if (newChat) {
       dispatch(addConversation(newChat));
@@ -95,20 +103,37 @@ export default function Sidebar({ onLogoutSuccess }) {
 
   return (
     <>
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={false}
         animate={{ width: isExpanded ? 280 : 72 }}
-        className="h-screen bg-linear-to-b from-[#1A0B2E] to-[#070210] border-r border-purple-500/20 flex flex-col font-['Orbitron',sans-serif] relative overflow-hidden z-20"
+        className={`fixed md:relative inset-y-0 left-0 z-50 h-full bg-linear-to-b from-[#1A0B2E] to-[#070210] border-r border-purple-500/20 flex flex-col font-['Orbitron',sans-serif] transition-transform duration-300 md:translate-x-0 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         <div className="flex items-center p-4 h-16">
           <AnimatePresence mode="wait">
-            {isExpanded && (
+            {showText && (
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 className="flex items-center gap-2 text-white font-bold text-lg tracking-wider cursor-pointer"
-                onClick={() => navigate("/")}
+                onClick={() => {
+                  navigate("/");
+                  setIsMobileOpen(false);
+                }}
               >
                 <div className="bg-purple-600/30 p-1 rounded-md border border-purple-500/50">
                   <BrainCircuit size={18} className="text-purple-300" />
@@ -117,9 +142,17 @@ export default function Sidebar({ onLogoutSuccess }) {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="md:hidden ml-auto p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors shrink-0"
+          >
+            <X size={20} />
+          </button>
+
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-auto p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors shrink-0"
+            className="hidden md:block ml-auto p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors shrink-0"
           >
             {isExpanded ? (
               <PanelLeftClose size={20} />
@@ -132,10 +165,10 @@ export default function Sidebar({ onLogoutSuccess }) {
         <div className="px-3 mb-4">
           <button
             onClick={handleNewChat}
-            className={`flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(147,51,234,0.5)] ${isExpanded ? "px-4" : "px-0"}`}
+            className={`flex items-center justify-center gap-2 w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(147,51,234,0.5)] ${showText ? "px-4" : "px-0"}`}
           >
             <Plus size={20} />
-            {isExpanded && (
+            {showText && (
               <span className="font-semibold text-sm tracking-wide shrink-0">
                 New Chat
               </span>
@@ -143,7 +176,7 @@ export default function Sidebar({ onLogoutSuccess }) {
           </button>
         </div>
 
-        {isExpanded && (
+        {showText && (
           <div className="px-4 py-2 text-xs font-semibold text-purple-400/60 uppercase tracking-widest">
             Recents
           </div>
@@ -161,11 +194,12 @@ export default function Sidebar({ onLogoutSuccess }) {
                 onClick={() => {
                   navigate("/");
                   dispatch(setSelectedConversation(chat));
+                  setIsMobileOpen(false);
                 }}
                 className={`group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${selectedConversation?._id === chat._id ? "bg-purple-600/30 text-white" : "text-purple-200/70 hover:bg-purple-500/10 hover:text-white"}`}
               >
                 <MessageSquare size={18} className="shrink-0" />
-                {isExpanded && (
+                {showText && (
                   <>
                     <span className="truncate flex-1 text-sm">
                       {chat.title || "New Chat"}
@@ -200,13 +234,13 @@ export default function Sidebar({ onLogoutSuccess }) {
         </div>
 
         <div
-          className={`border-t border-purple-500/20 bg-[#0A0214] z-20 transition-all duration-300 ${isExpanded ? "p-4" : "p-2 py-4"}`}
+          className={`border-t border-purple-500/20 bg-[#0A0214] z-20 transition-all duration-300 ${showText ? "p-4" : "p-2 py-4"}`}
         >
           <div
-            className={`flex flex-col rounded-2xl bg-linear-to-b from-[#1D0B3B] to-[#0F0524] border border-purple-500/30 shadow-[0_0_20px_-10px_rgba(147,51,234,0.3)] transition-all ${isExpanded ? "p-3 gap-3" : "p-1.5 gap-2 items-center"}`}
+            className={`flex flex-col rounded-2xl bg-linear-to-b from-[#1D0B3B] to-[#0F0524] border border-purple-500/30 shadow-[0_0_20px_-10px_rgba(147,51,234,0.3)] transition-all ${showText ? "p-3 gap-3" : "p-1.5 gap-2 items-center"}`}
           >
             <div
-              className={`flex items-center ${isExpanded ? "w-full" : "justify-center"}`}
+              className={`flex items-center ${showText ? "w-full" : "justify-center"}`}
             >
               <div className="relative shrink-0">
                 {userData?.avatar ? (
@@ -222,7 +256,7 @@ export default function Sidebar({ onLogoutSuccess }) {
                 )}
               </div>
 
-              {isExpanded && (
+              {showText && (
                 <div className="ml-3 flex-1 overflow-hidden">
                   <div className="text-sm font-bold text-white truncate tracking-wide">
                     {userData?.name || "User"}
@@ -233,7 +267,7 @@ export default function Sidebar({ onLogoutSuccess }) {
                 </div>
               )}
 
-              {isExpanded && (
+              {showText && (
                 <button
                   onClick={handleLogout}
                   className="p-2 text-purple-400 hover:text-red-400 hover:bg-red-500/20 rounded-lg transition-colors shrink-0 ml-2"
@@ -244,9 +278,12 @@ export default function Sidebar({ onLogoutSuccess }) {
               )}
             </div>
 
-            {isExpanded && (
+            {showText && (
               <button
-                onClick={() => navigate("/billing")}
+                onClick={() => {
+                  navigate("/billing");
+                  setIsMobileOpen(false);
+                }}
                 className="w-full flex items-center justify-between p-2.5 bg-black/20 hover:bg-black/40 border border-purple-500/20 rounded-xl transition-all duration-300 group shadow-inner mt-1"
               >
                 <span className="bg-purple-600 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md tracking-wider shadow-md">
@@ -264,10 +301,13 @@ export default function Sidebar({ onLogoutSuccess }) {
               </button>
             )}
 
-            {!isExpanded && (
+            {!showText && (
               <>
                 <button
-                  onClick={() => navigate("/billing")}
+                  onClick={() => {
+                    navigate("/billing");
+                    setIsMobileOpen(false);
+                  }}
                   className="flex items-center justify-center w-10 h-10 bg-purple-900/40 rounded-lg border border-purple-500/30 hover:bg-purple-600/40 transition-colors shrink-0"
                   title="View Billing Plans"
                 >

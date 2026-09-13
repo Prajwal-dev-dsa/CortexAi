@@ -14,6 +14,7 @@ import {
   GraduationCap,
   X,
   ImageOff,
+  FileText,
 } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -42,7 +43,6 @@ const SUGGESTIONS = [
   },
 ];
 
-// Fallback for Grid Images (Search)
 const ImageWithFallback = ({ src, onClick }) => {
   const [hasError, setHasError] = useState(false);
   if (hasError) return null;
@@ -61,7 +61,6 @@ const ImageWithFallback = ({ src, onClick }) => {
   );
 };
 
-// Premium Markdown Image Component (Handles Expired S3 Links & Resizing)
 const MarkdownImage = ({ src, alt, onClick }) => {
   const [hasError, setHasError] = useState(false);
 
@@ -87,7 +86,6 @@ const MarkdownImage = ({ src, alt, onClick }) => {
   );
 };
 
-// Premium Code Block with Copy Button
 const CodeBlock = ({ language, value }) => {
   const [copied, setCopied] = useState(false);
 
@@ -149,8 +147,7 @@ export default function MessageList({
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 font-sans flex flex-col relative">
-        {/* EMPTY STATE */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col relative">
         {messages.length === 0 && !isProcessing ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -164,7 +161,7 @@ export default function MessageList({
             <h2 className="text-2xl font-bold text-white mb-2 font-['Orbitron',sans-serif] tracking-wide text-center">
               How can I help you today?
             </h2>
-            <p className="text-purple-200/50 text-sm mb-10 text-center tracking-wide">
+            <p className="text-purple-200/50 text-sm mb-10 text-center tracking-wide font-sans">
               Start typing below or choose a suggestion to begin the
               conversation.
             </p>
@@ -186,7 +183,7 @@ export default function MessageList({
                       {suggestion.title}
                     </span>
                   </div>
-                  <p className="text-xs text-purple-300/60 leading-relaxed">
+                  <p className="text-xs text-purple-300/60 leading-relaxed font-sans">
                     "{suggestion.prompt}"
                   </p>
                 </motion.button>
@@ -194,7 +191,6 @@ export default function MessageList({
             </div>
           </motion.div>
         ) : (
-          /* ACTIVE CHAT MESSAGES */
           <div className="space-y-10 w-full max-w-5xl mx-auto pb-4">
             <AnimatePresence initial={false}>
               {messages.map((msg, index) => {
@@ -213,7 +209,6 @@ export default function MessageList({
                     <div
                       className={`flex gap-4 max-w-[95%] md:max-w-[85%] w-full ${isUser ? "flex-row-reverse" : "flex-row"}`}
                     >
-                      {/* Avatar */}
                       <div className="shrink-0 mt-1">
                         {isUser ? (
                           userData?.profilePicture ? (
@@ -234,18 +229,16 @@ export default function MessageList({
                         )}
                       </div>
 
-                      {/* Content Body */}
                       <div
-                        className={`flex flex-col ${isUser ? "items-end" : "items-start"} min-w-0 w-full`}
+                        className={`flex flex-col ${isUser ? "items-end" : "items-start"} min-w-0 w-full font-dm`}
                       >
                         <div
                           className={`relative text-[15px] w-full ${
                             isUser
-                              ? "px-5 py-3.5 bg-purple-600 text-white rounded-2xl rounded-tr-sm shadow-lg leading-relaxed inline-block max-w-fit"
-                              : "py-1 text-purple-50"
+                              ? "px-5 py-3.5 bg-purple-600 text-white rounded-2xl rounded-tr-sm shadow-lg leading-relaxed inline-block max-w-fit font-medium"
+                              : "py-1 text-purple-50 font-normal"
                           }`}
                         >
-                          {/* Search Image Grid Rendering */}
                           {!isUser && msg.images && msg.images.length > 0 && (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6 w-full max-w-3xl">
                               {msg.images.slice(0, 8).map((img, i) => (
@@ -259,17 +252,39 @@ export default function MessageList({
                           )}
 
                           {isUser ? (
-                            <div className="whitespace-pre-wrap">
-                              {msg.content}
+                            <div className="flex flex-col items-end gap-3 whitespace-pre-wrap tracking-wide">
+                              {msg.attachment &&
+                                msg.attachment.type.startsWith("image/") && (
+                                  <img
+                                    src={msg.attachment.url}
+                                    alt="Uploaded"
+                                    className="w-48 md:w-64 rounded-xl border border-purple-500/30 shadow-md object-cover"
+                                  />
+                                )}
+
+                              {msg.attachment &&
+                                msg.attachment.type === "application/pdf" && (
+                                  <div className="flex items-center gap-2 px-3 py-2 bg-[#1D0B3B] border border-purple-500/40 rounded-xl shadow-md w-full max-w-xs font-['Orbitron',sans-serif]">
+                                    <FileText
+                                      size={18}
+                                      className="text-purple-400 shrink-0"
+                                    />
+                                    <span className="text-xs text-purple-200 font-medium truncate">
+                                      {msg.attachment.name}
+                                    </span>
+                                  </div>
+                                )}
+
+                              <div>{msg.content}</div>
                             </div>
                           ) : (
-                            <div className="w-full wrap-break-word">
+                            <div className="w-full wrap-break-word font-dm">
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
                                   p: ({ node, ...props }) => (
                                     <p
-                                      className="mb-4 leading-relaxed text-gray-200"
+                                      className="mb-4 leading-relaxed text-gray-200 font-dm font-medium tracking-wide"
                                       {...props}
                                     />
                                   ),
@@ -281,7 +296,6 @@ export default function MessageList({
                                       {...props}
                                     />
                                   ),
-                                  // Use our new robust MarkdownImage component
                                   img: ({ node, ...props }) => (
                                     <MarkdownImage
                                       {...props}
@@ -290,73 +304,72 @@ export default function MessageList({
                                   ),
                                   h1: ({ node, ...props }) => (
                                     <h1
-                                      className="text-4xl md:text-5xl font-extrabold text-white mt-10 mb-6 tracking-tight border-b border-purple-500/30 pb-4"
+                                      className="text-4xl md:text-5xl font-bold font-dm text-white mt-10 mb-6 tracking-tight border-b border-purple-500/30 pb-4"
                                       {...props}
                                     />
                                   ),
                                   h2: ({ node, ...props }) => (
                                     <h2
-                                      className="text-3xl md:text-4xl font-bold text-white mt-8 mb-5 tracking-tight border-b border-purple-500/20 pb-3"
+                                      className="text-3xl md:text-4xl font-bold font-dm text-white mt-8 mb-5 tracking-tight border-b border-purple-500/20 pb-3"
                                       {...props}
                                     />
                                   ),
                                   h3: ({ node, ...props }) => (
                                     <h3
-                                      className="text-2xl md:text-3xl font-bold text-white mt-8 mb-4 tracking-wide"
+                                      className="text-2xl md:text-3xl font-bold font-dm text-white mt-8 mb-4 tracking-wide"
                                       {...props}
                                     />
                                   ),
                                   h4: ({ node, ...props }) => (
                                     <h4
-                                      className="text-xl md:text-2xl font-bold text-purple-50 mt-6 mb-3 tracking-wide"
+                                      className="text-xl md:text-2xl font-bold font-dm text-purple-50 mt-6 mb-3 tracking-wide"
                                       {...props}
                                     />
                                   ),
                                   h5: ({ node, ...props }) => (
                                     <h5
-                                      className="text-lg md:text-xl font-bold text-purple-100 mt-6 mb-3 tracking-wide"
+                                      className="text-lg md:text-xl font-bold font-dm text-purple-100 mt-6 mb-3 tracking-wide"
                                       {...props}
                                     />
                                   ),
                                   h6: ({ node, ...props }) => (
                                     <h6
-                                      className="text-base md:text-lg font-bold text-purple-200 mt-6 mb-2 uppercase tracking-widest"
+                                      className="text-base md:text-lg font-bold font-dm text-purple-200 mt-6 mb-2 uppercase tracking-widest"
                                       {...props}
                                     />
                                   ),
-
                                   ul: ({ node, ...props }) => (
                                     <ul
-                                      className="list-disc list-inside mb-6 space-y-2 marker:text-purple-500 text-gray-200"
+                                      className="list-disc list-inside mb-6 space-y-2 marker:text-purple-500 text-gray-200 font-dm font-normal"
                                       {...props}
                                     />
                                   ),
                                   ol: ({ node, ...props }) => (
                                     <ol
-                                      className="list-decimal list-inside mb-6 space-y-2 marker:text-purple-500 text-gray-200"
+                                      className="list-decimal list-inside mb-6 space-y-2 marker:text-purple-500 text-gray-200 font-dm font-normal"
                                       {...props}
                                     />
                                   ),
                                   li: ({ node, ...props }) => (
                                     <li
-                                      className="leading-relaxed"
+                                      className="leading-relaxed font-dm font-normal tracking-wide"
                                       {...props}
                                     />
                                   ),
                                   strong: ({ node, ...props }) => (
                                     <strong
-                                      className="font-bold text-white"
+                                      className="font-bold text-white font-dm"
                                       {...props}
                                     />
                                   ),
                                   blockquote: ({ node, ...props }) => (
                                     <blockquote
-                                      className="border-l-4 border-purple-500/50 pl-4 py-1 my-4 bg-purple-500/5 rounded-r-lg italic text-purple-200/80"
+                                      className="border-l-4 border-purple-500/50 pl-4 py-1 my-4 bg-purple-500/5 rounded-r-lg italic text-purple-200/80 font-dm"
                                       {...props}
                                     />
                                   ),
                                   table: ({ node, ...props }) => (
-                                    <div className="overflow-x-auto w-full mb-6 border border-purple-500/20 rounded-xl custom-scrollbar shadow-lg">
+                                    <div className="overflow-x-auto w-full mb-6 border border-purple-500/20 rounded-xl custom-scrollbar shadow-lg font-dm">
                                       <table
                                         className="w-full text-left border-collapse text-sm min-w-150"
                                         {...props}
@@ -365,7 +378,7 @@ export default function MessageList({
                                   ),
                                   thead: ({ node, ...props }) => (
                                     <thead
-                                      className="bg-[#15072B] text-purple-200 border-b border-purple-500/30"
+                                      className="bg-[#15072B] text-purple-200 border-b border-purple-500/30 font-dm"
                                       {...props}
                                     />
                                   ),
@@ -425,7 +438,6 @@ export default function MessageList({
                 );
               })}
 
-              {/* Processing Animation */}
               {isProcessing && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -463,7 +475,6 @@ export default function MessageList({
         <div ref={endOfMessagesRef} className="h-4 shrink-0" />
       </div>
 
-      {/* Full-Screen Interactive Lightbox */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div
