@@ -20,6 +20,9 @@ export default function Artifact() {
     (state) => state.conversation.selectedConversation,
   );
   const { messages } = useSelector((state) => state.message);
+  // Fetch theme state
+  const isDarkMode = useSelector((state) => state.theme.isDarkMode);
+
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("code");
   const [activeFileIndex, setActiveFileIndex] = useState(0);
@@ -92,24 +95,35 @@ export default function Artifact() {
 
   return (
     <div
-      className={`font-['Orbitron',sans-serif] z-50 shrink-0 transition-all duration-300 overflow-hidden shadow-[-20px_0_50px_-15px_rgba(147,51,234,0.15)] ${
+      className={`font-['Orbitron',sans-serif] z-50 shrink-0 transition-colors duration-500 overflow-hidden shadow-[-20px_0_50px_-15px_rgba(147,51,234,0.15)] ${
         isOpen
-          ? "fixed inset-0 w-full h-full bg-[#0A0214] flex flex-col md:relative md:w-[45%] md:border-l md:border-purple-500/20"
-          : "fixed bottom-40 right-4 w-14 h-14 bg-purple-600 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.4)] flex md:bg-[#0A0214] md:w-15 md:h-full md:relative md:bottom-auto md:right-auto md:rounded-none md:flex-col md:border-l md:border-purple-500/20"
+          ? `fixed inset-0 w-full h-full flex flex-col md:relative md:w-[45%] md:border-l ${isDarkMode ? "bg-[#0A0214] md:border-purple-500/20" : "bg-purple-50 md:border-purple-200"}`
+          : `fixed bottom-40 right-4 w-14 h-14 rounded-full shadow-[0_0_20px_rgba(147,51,234,0.4)] flex md:w-15 md:h-full md:relative md:bottom-auto md:right-auto md:rounded-none md:flex-col md:border-l ${isDarkMode ? "bg-purple-600 md:bg-[#0A0214] md:border-purple-500/20" : "bg-purple-500 md:bg-purple-50 md:border-purple-200"}`
       }`}
     >
       {isOpen ? (
         <div className="flex flex-col h-full w-full min-w-25">
-          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-purple-500/20 bg-[#0F0524] shrink-0">
+          <div
+            className={`flex items-center justify-between px-4 sm:px-6 py-4 border-b shrink-0 transition-colors duration-500 ${isDarkMode ? "border-purple-500/20 bg-[#0F0524]" : "border-purple-200 bg-white"}`}
+          >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/10 rounded-lg border border-purple-500/30 hidden sm:block">
-                <Terminal size={18} className="text-purple-300" />
+              <div
+                className={`p-2 rounded-lg border hidden sm:block ${isDarkMode ? "bg-purple-500/10 border-purple-500/30" : "bg-purple-100 border-purple-200"}`}
+              >
+                <Terminal
+                  size={18}
+                  className={isDarkMode ? "text-purple-300" : "text-purple-600"}
+                />
               </div>
               <div className="flex flex-col">
-                <h3 className="text-sm font-bold text-white tracking-wide truncate max-w-37.5 sm:max-w-50">
+                <h3
+                  className={`text-sm font-bold tracking-wide truncate max-w-37.5 sm:max-w-50 ${isDarkMode ? "text-white" : "text-purple-950"}`}
+                >
                   {selectedConversation?.title || "Generated Code"}
                 </h3>
-                <span className="text-[10px] text-purple-400/60 uppercase tracking-widest">
+                <span
+                  className={`text-[10px] uppercase tracking-widest ${isDarkMode ? "text-purple-400/60" : "text-purple-500"}`}
+                >
                   Artifact
                 </span>
               </div>
@@ -119,11 +133,11 @@ export default function Artifact() {
               {activeTab === "code" ? (
                 <button
                   onClick={handleCopyCode}
-                  className=" items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-400 hover:text-white hover:bg-purple-500/20 border border-purple-500/20 transition-all mr-1"
+                  className={`items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all mr-1 ${isDarkMode ? "text-purple-400 hover:text-white hover:bg-purple-500/20 border-purple-500/20" : "text-purple-600 hover:text-purple-950 hover:bg-purple-100 border-purple-200"}`}
                   title="Copy current file"
                 >
                   {copied ? (
-                    <Check size={14} className="text-green-400" />
+                    <Check size={14} className="text-green-500" />
                   ) : (
                     <Copy size={14} />
                   )}
@@ -131,17 +145,19 @@ export default function Artifact() {
               ) : (
                 <button
                   onClick={handleFullScreenPreview}
-                  className=" items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-400 hover:text-white hover:bg-purple-500/20 border border-purple-500/20 transition-all mr-1"
+                  className={`items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all mr-1 ${isDarkMode ? "text-purple-400 hover:text-white hover:bg-purple-500/20 border-purple-500/20" : "text-purple-600 hover:text-purple-950 hover:bg-purple-100 border-purple-200"}`}
                   title="Open in new tab"
                 >
                   <ExternalLink size={14} />
                 </button>
               )}
 
-              <div className="flex bg-[#1D0B3B] p-1 rounded-lg border border-purple-500/30">
+              <div
+                className={`flex p-1 rounded-lg border ${isDarkMode ? "bg-[#1D0B3B] border-purple-500/30" : "bg-purple-100 border-purple-200"}`}
+              >
                 <button
                   onClick={() => setActiveTab("code")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeTab === "code" ? "bg-purple-600 text-white shadow-md" : "text-purple-300/60 hover:text-white"}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeTab === "code" ? "bg-purple-600 text-white shadow-md" : isDarkMode ? "text-purple-300/60 hover:text-white" : "text-purple-700/60 hover:text-purple-950"}`}
                 >
                   <Code size={14} />{" "}
                   <span className="hidden sm:inline">Code</span>
@@ -149,7 +165,7 @@ export default function Artifact() {
                 {hasHtml && (
                   <button
                     onClick={() => setActiveTab("preview")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeTab === "preview" ? "bg-purple-600 text-white shadow-md" : "text-purple-300/60 hover:text-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeTab === "preview" ? "bg-purple-600 text-white shadow-md" : isDarkMode ? "text-purple-300/60 hover:text-white" : "text-purple-700/60 hover:text-purple-950"}`}
                   >
                     <Play size={14} />{" "}
                     <span className="hidden sm:inline">Preview</span>
@@ -158,7 +174,7 @@ export default function Artifact() {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 ml-1 sm:ml-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
+                className={`p-2 ml-1 sm:ml-2 rounded-lg transition-colors ${isDarkMode ? "text-purple-400 hover:text-white hover:bg-purple-500/20" : "text-purple-600 hover:text-purple-950 hover:bg-purple-200"}`}
                 title="Collapse Artifact"
               >
                 <PanelRightClose size={20} className="hidden md:block" />
@@ -167,22 +183,38 @@ export default function Artifact() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0 bg-[#070210] font-sans">
+          <div
+            className={`flex-1 flex flex-col min-h-0 font-sans transition-colors duration-500 ${isDarkMode ? "bg-[#070210]" : "bg-white"}`}
+          >
             {activeTab === "code" ? (
               <>
-                <div className="flex overflow-x-auto custom-scrollbar border-b border-purple-500/10 bg-[#0A0214] shrink-0">
+                <div
+                  className={`flex overflow-x-auto custom-scrollbar border-b shrink-0 ${isDarkMode ? "border-purple-500/10 bg-[#0A0214]" : "border-purple-100 bg-purple-50"}`}
+                >
                   {files.map((file, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveFileIndex(idx)}
-                      className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${activeFileIndex === idx ? "border-purple-500 text-purple-200 bg-purple-500/5" : "border-transparent text-purple-400/50 hover:text-purple-300 hover:bg-white/5"}`}
+                      className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
+                        activeFileIndex === idx
+                          ? isDarkMode
+                            ? "border-purple-500 text-purple-200 bg-purple-500/5"
+                            : "border-purple-600 text-purple-900 bg-purple-100/50"
+                          : isDarkMode
+                            ? "border-transparent text-purple-400/50 hover:text-purple-300 hover:bg-white/5"
+                            : "border-transparent text-purple-500/70 hover:text-purple-800 hover:bg-purple-100/30"
+                      }`}
                     >
                       <FileCode2
                         size={16}
                         className={
                           activeFileIndex === idx
-                            ? "text-purple-400"
-                            : "text-purple-400/50"
+                            ? isDarkMode
+                              ? "text-purple-400"
+                              : "text-purple-600"
+                            : isDarkMode
+                              ? "text-purple-400/50"
+                              : "text-purple-500/50"
                         }
                       />
                       {file.name}
@@ -196,7 +228,7 @@ export default function Artifact() {
                     language={getLanguageFromFileName(
                       files[activeFileIndex]?.name,
                     )}
-                    theme="vs-dark"
+                    theme={isDarkMode ? "vs-dark" : "light"}
                     value={files[activeFileIndex]?.content || ""}
                     options={{
                       readOnly: true,
@@ -236,13 +268,15 @@ export default function Artifact() {
                 e.stopPropagation();
                 setIsOpen(true);
               }}
-              className="p-2 text-purple-400 hover:text-white hover:bg-purple-500/20 rounded-lg transition-colors"
+              className={`p-2 rounded-lg transition-colors ${isDarkMode ? "text-purple-400 hover:text-white hover:bg-purple-500/20" : "text-purple-600 hover:text-purple-950 hover:bg-purple-200"}`}
               title="Expand Artifact"
             >
               <PanelRightOpen size={20} />
             </button>
 
-            <div className="mt-8 flex flex-col items-center gap-4 text-purple-400/50">
+            <div
+              className={`mt-8 flex flex-col items-center gap-4 ${isDarkMode ? "text-purple-400/50" : "text-purple-500/70"}`}
+            >
               <Code size={18} />
               <span
                 className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"

@@ -4,13 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install-all": "npm install && npm install --prefix gateway && npm install --prefix services/agent && npm install --prefix services/auth && npm install --prefix services/billing && npm install --prefix services/chat",
+    "start": "concurrently \"node gateway/index.js\" \"node services/agent/index.js\" \"node services/auth/index.js\" \"node services/billing/index.js\" \"node services/chat/index.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "concurrently": "^10.0.5",
+    "dotenv": "^17.4.2",
     "ioredis": "^6.0.0"
   }
 }

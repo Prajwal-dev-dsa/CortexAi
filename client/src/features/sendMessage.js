@@ -6,6 +6,7 @@ export const sendMessage = async (payload) => {
         formData.append("prompt", payload.prompt);
         formData.append("conversationId", payload.conversationId);
         formData.append("agent", payload.agent);
+        formData.append("plan", payload.plan);
 
         if (payload.file) {
             formData.append("file", payload.file);

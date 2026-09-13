@@ -9,7 +9,7 @@ dotenv.config();
 
 export const agentController = async (req, res, next) => {
     try {
-        const { prompt, conversationId, agent } = req.body;
+        const { prompt, conversationId, agent, plan } = req.body;
         const fileType = req.file;
 
         if (!prompt || !conversationId) {
@@ -51,7 +51,8 @@ export const agentController = async (req, res, next) => {
             conversationId,
             agentUsed: agent,
             userId,
-            fileType
+            fileType,
+            userPlan: plan || "free",
         });
 
         if (fileType) {

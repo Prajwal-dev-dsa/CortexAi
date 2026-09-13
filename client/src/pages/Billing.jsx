@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Check,
-  Zap,
-  Star,
-  Loader2,
-  Link as LinkIcon,
-  CalendarDays,
-} from "lucide-react";
+import { Check, Zap, Star, Loader2, Link as LinkIcon } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { createOrder } from "../features/createOrder";
@@ -22,7 +15,11 @@ const PRICING_PLANS = [
     name: "Free",
     price: "0",
     credits: 100,
-    features: ["Simple Chats", "Realtime Research", "Community Support"],
+    features: [
+      "CortexAI Basic Chat",
+      "Real-Time Web Search",
+      "Community Support",
+    ],
     buttonText: "Get Started",
     popular: false,
   },
@@ -31,7 +28,11 @@ const PRICING_PLANS = [
     name: "Go",
     price: "499",
     credits: 500,
-    features: ["Everything in Free", "PDF Generation", "PPT Generation"],
+    features: [
+      "Everything in Free",
+      "Smart PDF Generation",
+      "Automated PPT Creation",
+    ],
     buttonText: "Upgrade to Go",
     popular: false,
   },
@@ -40,7 +41,11 @@ const PRICING_PLANS = [
     name: "Pro",
     price: "999",
     credits: 1500,
-    features: ["Everything in Go", "Image Generation", "Coding Help"],
+    features: [
+      "Everything in Go",
+      "AI Image Studio",
+      "Advanced Coding Assistant",
+    ],
     buttonText: "Upgrade to Pro",
     popular: true,
   },
@@ -49,7 +54,11 @@ const PRICING_PLANS = [
     name: "Enterprise",
     price: "1999",
     credits: 5000,
-    features: ["Everything in Pro", "Highest Priority", "Dedicated Support"],
+    features: [
+      "Everything in Pro",
+      "Vision & PDF RAG Agents",
+      "Highest Priority Execution",
+    ],
     buttonText: "Upgrade to Enterprise",
     popular: false,
   },
@@ -57,12 +66,8 @@ const PRICING_PLANS = [
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.15 } },
 };
-
 const cardVariants = {
   hidden: { opacity: 0, y: 30 },
   show: {
@@ -76,6 +81,7 @@ export default function Billing() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { userData } = useSelector((state) => state.user);
+  const isDarkMode = useSelector((state) => state.theme.isDarkMode);
   const [processingPlan, setProcessingPlan] = useState(null);
 
   const handlePayment = async (planId) => {
@@ -83,9 +89,7 @@ export default function Billing() {
       navigate("/");
       return;
     }
-
     setProcessingPlan(planId);
-
     try {
       const isLoaded = await loadRazorpay();
       if (!isLoaded) {
@@ -93,7 +97,6 @@ export default function Billing() {
         setProcessingPlan(null);
         return;
       }
-
       const orderData = await createOrder(planId);
       if (!orderData || !orderData.order) {
         alert("Failed to create order");
@@ -112,16 +115,13 @@ export default function Billing() {
           name: userData?.name || "User",
           email: userData?.email || "",
         },
-        theme: {
-          color: "#A855F7",
-        },
+        theme: { color: "#A855F7" },
         handler: async function (response) {
           const verifyData = await verifyPayment({
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
           });
-
           if (verifyData) {
             const updatedUser = await getCurrentUser();
             if (updatedUser) dispatch(setUserData(updatedUser));
@@ -134,7 +134,6 @@ export default function Billing() {
 
       const paymentObject = new window.Razorpay(options);
       paymentObject.open();
-
       paymentObject.on("payment.failed", function (response) {
         alert("Payment failed! " + response.error.description);
       });
@@ -147,31 +146,27 @@ export default function Billing() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070210] font-['Orbitron',sans-serif] text-white flex flex-col items-center py-10 px-6 relative overflow-hidden">
+    <div
+      className={`min-h-screen ${isDarkMode ? "bg-[#070210] text-white" : "bg-purple-50 text-purple-950"} font-['Orbitron',sans-serif] flex flex-col items-center py-10 px-6 relative overflow-hidden transition-colors duration-500`}
+    >
       <style
         dangerouslySetInnerHTML={{
           __html: `
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
-        
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(147, 51, 234, 0.2);
-            border-radius: 4px;
-        }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-            background: rgba(147, 51, 234, 0.5);
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: ${isDarkMode ? "rgba(147, 51, 234, 0.2)" : "rgba(147, 51, 234, 0.3)"}; border-radius: 4px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: ${isDarkMode ? "rgba(147, 51, 234, 0.5)" : "rgba(147, 51, 234, 0.6)"}; }
       `,
         }}
       />
 
-      <div className="absolute top-0 right-[20%] w-150 h-150 bg-purple-600/10 blur-[180px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-[10%] w-125 h-125 bg-fuchsia-600/10 blur-[150px] rounded-full pointer-events-none" />
+      <div
+        className={`absolute top-0 right-[20%] w-150 h-150 blur-[180px] rounded-full pointer-events-none ${isDarkMode ? "bg-purple-600/10" : "bg-purple-300/30"}`}
+      />
+      <div
+        className={`absolute bottom-0 left-[10%] w-125 h-125 blur-[150px] rounded-full pointer-events-none ${isDarkMode ? "bg-fuchsia-600/10" : "bg-fuchsia-300/30"}`}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: -20, filter: "blur(10px)" }}
@@ -185,7 +180,9 @@ export default function Billing() {
             transparent pricing
           </span>
         </h1>
-        <p className="text-purple-200/60 text-sm md:text-base leading-relaxed tracking-wider">
+        <p
+          className={`text-sm md:text-base leading-relaxed tracking-wider ${isDarkMode ? "text-purple-200/60" : "text-purple-700/70"}`}
+        >
           Choose the perfect path to unlock AI-powered creation. Build anytime,
           explore always.
         </p>
@@ -202,10 +199,10 @@ export default function Billing() {
             key={plan.id}
             variants={cardVariants}
             whileHover={{ y: -8, scale: 1.02 }}
-            className={`relative flex flex-col bg-[#0A0514]/80 backdrop-blur-xl rounded-3xl p-8 border transition-colors duration-300 ${
-              plan.popular
-                ? "border-purple-500/80 shadow-[0_0_50px_-15px_rgba(168,85,247,0.4)]"
-                : "border-purple-500/10 hover:border-purple-500/30"
+            className={`relative flex flex-col rounded-3xl p-8 border transition-colors duration-300 ${
+              isDarkMode
+                ? `bg-[#0A0514]/80 backdrop-blur-xl ${plan.popular ? "border-purple-500/80 shadow-[0_0_50px_-15px_rgba(168,85,247,0.4)]" : "border-purple-500/10 hover:border-purple-500/30"}`
+                : `bg-white/80 backdrop-blur-xl ${plan.popular ? "border-purple-400 shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]" : "border-purple-200 hover:border-purple-400 shadow-sm"}`
             }`}
           >
             {plan.popular && (
@@ -223,14 +220,21 @@ export default function Billing() {
               <span className="text-5xl font-black tracking-tighter">
                 ₹{plan.price}
               </span>
-              <span className="text-xs text-purple-300/40 font-medium tracking-wide">
+              <span
+                className={`text-xs font-medium tracking-wide ${isDarkMode ? "text-purple-300/40" : "text-purple-500/60"}`}
+              >
                 /one-time
               </span>
             </div>
 
             <div className="flex items-center gap-3 mb-8">
-              <div className="flex items-center gap-2 text-purple-300/70 text-xs font-medium bg-purple-900/20 px-3 py-1.5 rounded-lg border border-purple-500/20">
-                <LinkIcon size={12} className="text-purple-400" />
+              <div
+                className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border ${isDarkMode ? "text-purple-300/70 bg-purple-900/20 border-purple-500/20" : "text-purple-700 bg-purple-100 border-purple-300"}`}
+              >
+                <LinkIcon
+                  size={12}
+                  className={isDarkMode ? "text-purple-400" : "text-purple-600"}
+                />
                 Credits: {plan.credits}
               </div>
             </div>
@@ -239,7 +243,7 @@ export default function Billing() {
               {plan.features.map((feature, i) => (
                 <li
                   key={i}
-                  className="flex items-start gap-3 text-sm text-purple-100/70 font-medium tracking-wide"
+                  className={`flex items-start gap-3 text-sm font-medium tracking-wide ${isDarkMode ? "text-purple-100/70" : "text-purple-800"}`}
                 >
                   <Check
                     size={16}
@@ -256,7 +260,9 @@ export default function Billing() {
               className={`w-full py-4 rounded-xl font-bold text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 overflow-hidden relative ${
                 plan.popular
                   ? "bg-linear-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white shadow-lg shadow-purple-500/25 border-none"
-                  : "bg-transparent hover:bg-purple-900/30 text-white border border-purple-500/30 hover:border-purple-500/60"
+                  : isDarkMode
+                    ? "bg-transparent hover:bg-purple-900/30 text-white border border-purple-500/30 hover:border-purple-500/60"
+                    : "bg-transparent hover:bg-purple-100 text-purple-900 border border-purple-300 hover:border-purple-500"
               }`}
             >
               {processingPlan === plan.id ? (
