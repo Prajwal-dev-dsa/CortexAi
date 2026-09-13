@@ -254,7 +254,7 @@ export default function MessageList({
                           {isUser ? (
                             <div className="flex flex-col items-end gap-3 whitespace-pre-wrap tracking-wide">
                               {msg.attachment &&
-                                msg.attachment.type.startsWith("image/") && (
+                                msg.attachment.type?.startsWith("image/") && (
                                   <img
                                     src={msg.attachment.url}
                                     alt="Uploaded"

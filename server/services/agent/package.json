@@ -12,8 +12,6 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1127.0",
-    "@aws-sdk/s3-request-presigner": "^3.1128.0",
     "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^1.2.10",
     "@langchain/google": "^0.2.4",
@@ -25,11 +23,13 @@
     "@langchain/tavily": "^1.2.0",
     "@langchain/textsplitters": "^1.0.1",
     "axios": "^1.20.0",
+    "cloudinary": "^2.11.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.3.0",
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.20.2",
-    "pptxgenjs": "^4.0.1"
+    "pptxgenjs": "^4.0.1",
+    "streamifier": "^0.1.1"
   }
 }

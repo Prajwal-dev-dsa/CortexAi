@@ -2,6 +2,8 @@ import axios from "axios";
 import { graph } from "../graph/graph.js";
 import dotenv from "dotenv";
 import { addNewMessage } from "../config/memory.js";
+import fs from "fs";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
 
 dotenv.config();
 
@@ -19,10 +21,29 @@ export const agentController = async (req, res, next) => {
             return res.status(401).json({ error: "User not authenticated" });
         }
 
+        let attachmentData = null;
+        if (fileType) {
+            try {
+                const fileBuffer = await fs.promises.readFile(fileType.path);
+                const resourceType = fileType.mimetype === "application/pdf" ? "raw" : "image";
+
+                const uploadUrl = await uploadToCloudinary(fileBuffer, fileType.filename, resourceType);
+
+                attachmentData = {
+                    url: uploadUrl,
+                    name: fileType.originalname,
+                    type: fileType.mimetype
+                };
+            } catch (uploadError) {
+                console.error("Cloudinary upload failed:", uploadError);
+            }
+        }
+
         await axios.post(`${process.env.CHAT_SERVICE_URL}/save-message`, {
             content: prompt,
             conversationId,
-            role: "user"
+            role: "user",
+            attachment: attachmentData
         });
 
         const result = await graph.invoke({
@@ -32,6 +53,18 @@ export const agentController = async (req, res, next) => {
             userId,
             fileType
         });
+
+        if (fileType) {
+            try {
+                if (fs.existsSync(fileType.path)) {
+                    await fs.promises.unlink(fileType.path);
+                }
+            } catch (cleanupError) {
+                if (cleanupError.code !== 'ENOENT') {
+                    console.error("Failed to clean up temp file:", cleanupError);
+                }
+            }
+        }
 
         let normalizedResponse = "";
         if (typeof result.aiResponse === "string") {

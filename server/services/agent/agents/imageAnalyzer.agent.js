@@ -107,13 +107,5 @@ export const imageAnalyzerAgent = async (state) => {
             ...state,
             aiResponse: "Sorry, I encountered an error while analyzing the image. Please try again."
         };
-    } finally {
-        try {
-            if (state.fileType && state.fileType.path) {
-                await fs.unlink(state.fileType.path);
-            }
-        } catch (err) {
-            console.error("Failed to delete temp file:", err);
-        }
     }
 };

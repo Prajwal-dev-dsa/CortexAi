@@ -95,7 +95,4 @@ export const pdfRagAgent = async (state) => {
             aiResponse: "Sorry, I encountered an error while processing your request."
         }
     }
-    finally {
-        fs.unlinkSync(state.fileType.path)
-    }
 }

@@ -77,15 +77,23 @@ export const deleteConversation = async (req, res) => {
 
 export const saveMessage = async (req, res) => {
     try {
-        const { conversationId, content, role, images, artifacts } = req.body
+        const { conversationId, content, role, images, artifacts, attachment } = req.body;
         if (!conversationId || !content || !role) {
-            return res.status(400).json({ message: "Conversation ID, content and role are required" })
+            return res.status(400).json({ message: "Conversation ID, content and role are required" });
         }
-        const message = await MessageModel.create({ conversationId, content, role, images, artifacts })
-        return res.status(200).json(message)
+        const message = await MessageModel.create({
+            conversationId,
+            content,
+            role,
+            images,
+            artifacts,
+            attachment
+        });
+
+        return res.status(200).json(message);
     } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: `Error in saving message: ${error.message}` })
+        console.error(error);
+        return res.status(500).json({ message: `Error in saving message: ${error.message}` });
     }
 }
 
