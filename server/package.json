@@ -1,19 +1,17 @@
 {
-  "name": "server",
+  "name": "cortexai-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Root configuration for unified production deployment",
   "main": "index.js",
   "scripts": {
     "install-all": "npm install && npm install --prefix gateway && npm install --prefix services/agent && npm install --prefix services/auth && npm install --prefix services/billing && npm install --prefix services/chat",
-    "start": "concurrently \"node gateway/index.js\" \"node services/agent/index.js\" \"node services/auth/index.js\" \"node services/billing/index.js\" \"node services/chat/index.js\""
+    "start": "concurrently \"node services/agent/index.js\" \"node services/auth/index.js\" \"node services/billing/index.js\" \"node services/chat/index.js\" \"wait-on tcp:8001 tcp:8002 tcp:8003 tcp:8004 && node gateway/index.js\"",
+    "dev": "concurrently \"node services/agent/index.js\" \"node services/auth/index.js\" \"node services/billing/index.js\" \"node services/chat/index.js\" \"wait-on tcp:8001 tcp:8002 tcp:8003 tcp:8004 && node gateway/index.js\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
   "dependencies": {
     "concurrently": "^10.0.5",
     "dotenv": "^17.4.2",
-    "ioredis": "^6.0.0"
+    "ioredis": "^6.0.0",
+    "wait-on": "^9.1.0"
   }
 }
