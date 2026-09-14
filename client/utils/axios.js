@@ -1,6 +1,7 @@
 import axios from "axios"
 
+const VITE_SERVER_URL = "https://cortexai-a21z.onrender.com"
 export const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_SERVER_URL,
+    baseURL: VITE_SERVER_URL,
     withCredentials: true
 })

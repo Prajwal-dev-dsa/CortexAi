@@ -9,12 +9,11 @@ const app = express()
 
 app.use(express.json())
 
-const PORT = process.env.PORT || 8002
-
 app.use("/", router)
 
 connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Chat service running on port ${PORT}`)
-    })
+    const PORT = 8002;
+    app.listen(PORT, "127.0.0.1", () => {
+        console.log(`Service securely running internally on http://127.0.0.1:${PORT}`);
+    });
 })

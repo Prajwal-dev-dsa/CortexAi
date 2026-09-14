@@ -11,12 +11,11 @@ const app = express()
 app.use(express.json())
 app.use(cookieParser())
 
-const PORT = process.env.PORT || 8004
-
 app.use("/", router)
 
 connectDB().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Billing service running on port ${PORT}`)
-    })
+    const PORT = 8004;
+    app.listen(PORT, "127.0.0.1", () => {
+        console.log(`Service securely running internally on http://127.0.0.1:${PORT}`);
+    });
 })

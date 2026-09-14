@@ -13,19 +13,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+app.use(morgan("dev"));
+
 app.use(cors({
     origin: [
-        process.env.CLIENT_URL,
-        "https://cortex-ai-seven-sigma.vercel.app",
-        "http://localhost:5173"
+        "https://cortex-ai-nu.vercel.app",
+        "http://localhost:5173",
+        process.env.CLIENT_URL
     ].filter(Boolean),
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
 
 app.use(cookieParser());
-app.use(morgan("dev"));
 
 app.use("/api/auth", proxy("http://127.0.0.1:8001"));
 app.use("/api/chat", protectedRoute, proxyWithHeader("http://127.0.0.1:8002"));

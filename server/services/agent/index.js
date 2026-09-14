@@ -8,8 +8,6 @@ const app = express()
 
 app.use(express.json())
 
-const PORT = process.env.PORT || 8003
-
 app.use("/", router)
 
 app.use((err, req, res, next) => {
@@ -23,6 +21,7 @@ app.use((err, req, res, next) => {
     return next(err);
 });
 
-app.listen(PORT, () => {
-    console.log(`Agent service running on port ${PORT}`)
-})
+const PORT = 8003;
+app.listen(PORT, "127.0.0.1", () => {
+    console.log(`Service securely running internally on http://127.0.0.1:${PORT}`);
+});
