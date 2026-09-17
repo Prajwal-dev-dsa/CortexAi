@@ -1,28 +1,36 @@
 import { ChatGroq } from "@langchain/groq"
-import { ChatGoogle } from "@langchain/google";
 import { ChatOpenRouter } from "@langchain/openrouter";
 import "dotenv/config";
 
-const groqLLM = new ChatGroq({
+const openAiLlmForEverything = new ChatGroq({
   apiKey: process.env.GROQ_API_KEY,
   model: "openai/gpt-oss-120b",
-  temperature: 2
+  temperature: 0.7
 })
 
-const googleLLM = new ChatGoogle({
-  apiKey: process.env.GOOGLE_API_KEY,
-  model: "gemini-3.7-flash",
-});
-
-const openrouterLLM = new ChatOpenRouter({
+const deepseekLlmForCoding = new ChatOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
   model: "deepseek/deepseek-chat",
-  temperature: 0,
-  maxTokens: 1024
+  maxTokens: 4096
+});
+
+const qwenLlmForImageAnalysis = new ChatGroq({
+  apiKey: process.env.GROQ_API_KEY,
+  model: "qwen/qwen3.8-27b",
+  temperature: 0.6,
+  topP: 0.8,
+  maxTokens: 2048,
+  modelKwargs: {
+    top_k: 20,
+    min_p: 0,
+    presence_penalty: 1.5,
+    reasoning_effort: "none",
+    reasoning_format: "hidden",
+  },
 });
 
 export const getDesiredModel = (agent) => {
-  if (agent === "coding") return openrouterLLM;
-  if (agent === "title" || agent === "imageAnalyzer") return googleLLM;
-  return groqLLM;
+  if (agent === "coding") return deepseekLlmForCoding;
+  if (agent === "imageAnalyzer") return qwenLlmForImageAnalysis;
+  return openAiLlmForEverything;
 }

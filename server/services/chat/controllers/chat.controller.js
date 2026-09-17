@@ -139,7 +139,11 @@ export const generateTitleForConversation = async (req, res) => {
             { role: "human", content: prompt }
         ]);
 
-        const rawTitle = response.content.trim().replace(/['"]/g, "");
+        const raw = response.content;
+        const text = Array.isArray(raw)
+            ? raw.filter(b => b.type === "text").map(b => b.text).join("")
+            : String(raw);
+        const rawTitle = text.trim().replace(/['"]/g, "");
 
         return res.status(200).json({ title: rawTitle });
     } catch (error) {
